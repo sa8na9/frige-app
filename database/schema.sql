@@ -3,6 +3,7 @@
 -- =============================================
 -- データベース: fridge_app
 -- 作成日: 2025-02-15
+-- 更新日: 2026-02-17 (opened_date追加)
 -- =============================================
 
 -- 既存のテーブルを削除(開発時のリセット用)
@@ -54,6 +55,7 @@ CREATE TABLE items (
     container_type INT NOT NULL,
     quantity_level INT NOT NULL DEFAULT 1,
     purchase_date DATE DEFAULT (CURRENT_DATE),
+    opened_date DATE NULL COMMENT '開封日',
     expiry_date DATE NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
