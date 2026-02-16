@@ -4,18 +4,40 @@ import psycopg2
 import psycopg2.extras
 from config import get_db_config, USE_PRODUCTION
 from datetime import datetime, timedelta
+import os
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here-change-in-production'
+
+# 🔍 デバッグ情報を出力
+print("=" * 60)
+print("🔍 デバッグ情報 - アプリ起動時")
+print("=" * 60)
+print(f"USE_PRODUCTION: {USE_PRODUCTION}")
+print(f"DATABASE_URL環境変数: {os.environ.get('DATABASE_URL', '❌ 未設定')}")
+print(f"PRODUCTION環境変数: {os.environ.get('PRODUCTION', '❌ 未設定')}")
+print(f"実際の接続先設定:")
+config = get_db_config()
+if isinstance(config, str):
+    # PostgreSQL接続文字列の場合はパスワード部分を隠す
+    masked_config = config.replace(config.split(':')[2].split('@')[0], '***PASSWORD***')
+    print(f"  PostgreSQL: {masked_config}")
+else:
+    # MySQL設定辞書の場合
+    print(f"  MySQL: host={config.get('host')}, database={config.get('database')}")
+print("=" * 60)
+print()
 
 # データベース接続を取得
 def get_db_connection():
     config = get_db_config()
     if USE_PRODUCTION:
         # PostgreSQL (Supabase) - 接続文字列で接続
+        print("🔗 PostgreSQLに接続しています...")
         return psycopg2.connect(config)
     else:
         # MySQL (XAMPP) - 辞書形式で接続
+        print("🔗 MySQL(XAMPP)に接続しています...")
         return mysql.connector.connect(**config)
 
 # 冷蔵庫選択画面(ハリボテ)
@@ -42,18 +64,33 @@ def items_list():
     else:
         # 期限順: 期限切れ → 1週間以内 → それ以降
         # 期限未設定の場合は購入日でソート
-        # PostgreSQL対応版
-        order_clause = """
-            ORDER BY 
-                CASE 
-                    WHEN expiry_date IS NULL THEN 2
-                    WHEN expiry_date < CURRENT_DATE THEN 0
-                    WHEN expiry_date <= CURRENT_DATE + INTERVAL '7 days' THEN 1
-                    ELSE 2
-                END,
-                expiry_date,
-                purchase_date DESC
-        """
+        # MySQL/PostgreSQL両対応版
+        if USE_PRODUCTION:
+            # PostgreSQL用
+            order_clause = """
+                ORDER BY 
+                    CASE 
+                        WHEN expiry_date IS NULL THEN 2
+                        WHEN expiry_date < CURRENT_DATE THEN 0
+                        WHEN expiry_date <= CURRENT_DATE + INTERVAL '7 days' THEN 1
+                        ELSE 2
+                    END,
+                    expiry_date,
+                    purchase_date DESC
+            """
+        else:
+            # MySQL用
+            order_clause = """
+                ORDER BY 
+                    CASE 
+                        WHEN expiry_date IS NULL THEN 2
+                        WHEN expiry_date < CURDATE() THEN 0
+                        WHEN expiry_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN 1
+                        ELSE 2
+                    END,
+                    expiry_date,
+                    purchase_date DESC
+            """
     
     # 調味料を取得
     query = f"""
