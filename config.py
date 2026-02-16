@@ -8,15 +8,16 @@ DB_CONFIG_LOCAL = {
     'charset': 'utf8mb4'
 }
 
+# Supabaseのパスワードを環境変数から取得
+SUPABASE_PASSWORD = os.environ.get('SUPABASE_PASSWORD', 'Fridge2026!Secure#')
+
 DATABASE_URL = os.environ.get(
     'DATABASE_URL',
-    'postgresql://postgres.gcxitnxjafuwmahrcgqc:Fridge2026!Secure#@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres'
+    f'postgresql://postgres.gcxitnxjafuwmahrcgqc:{SUPABASE_PASSWORD}@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres'
 )
 
-# 🚨 緊急修正: ローカル環境を強制的に有効化
-# 元の行をコメントアウト
-# USE_PRODUCTION = os.environ.get('PRODUCTION', 'false').lower() == 'true'
-USE_PRODUCTION = False
+# 本番環境判定（Render.comではPRODUCTION=trueを設定）
+USE_PRODUCTION = os.environ.get('PRODUCTION', 'false').lower() == 'true'
 
 def get_db_config():
     if USE_PRODUCTION:
