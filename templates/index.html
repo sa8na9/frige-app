@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}調味料一覧 - 冷蔵庫管理アプリ{% endblock %}
+
+{% block content %}
+<div class="items-page">
+    <header class="page-header">
+        <h1>冷蔵庫管理アプリ</h1>
+        <a href="{{ url_for('share_settings') }}" class="btn btn-icon">⚙️ 共有設定</a>
+    </header>
+    
+    <div class="toolbar">
+        <div class="sort-buttons">
+            <a href="{{ url_for('items_list', sort='expiry') }}" 
+               class="btn btn-small {% if current_sort == 'expiry' %}btn-active{% endif %}">
+                期限順 ▼
+            </a>
+            <a href="{{ url_for('items_list', sort='quantity') }}" 
+               class="btn btn-small {% if current_sort == 'quantity' %}btn-active{% endif %}">
+                残量順 ▼
+            </a>
+        </div>
+        <a href="{{ url_for('register') }}" class="btn btn-primary">+ 新規登録</a>
+    </div>
+    
+    <div class="items-list">
+        {% if items %}
+            {% for item in items %}
+            <div class="item-card">
+                <div class="item-header">
+                    <h3>{{ item.name }} <span class="container-type">({{ item.container_type_text }})</span></h3>
+                </div>
+                
+                <div class="item-info">
+                    <p class="item-dates">
+                        <span class="date-label">購入:</span> {{ item.purchase_date or '未設定' }}
+                        {% if item.opened_date %}
+                        <span class="date-separator">|</span>
+                        <span class="date-label">開封:</span> {{ item.opened_date }}
+                        {% endif %}
+                    </p>
+                    <p class="expiry-date {{ item.expiry_class }}">
+                        賞味期限: 
+                        {% if item.expiry_date %}
+                            {{ item.expiry_date }}
+                            {% if item.expiry_icon %}
+                                <span class="icon">{{ item.expiry_icon }}</span>
+                            {% endif %}
+                        {% else %}
+                            未設定
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="quantity-selector">
+                    <span>残量:</span>
+                    <form method="POST" action="{{ url_for('update_quantity', item_id=item.id, new_level=1) }}" style="display: inline;">
+                        <button type="submit" class="qty-btn {% if item.quantity_level == 1 %}active level-1{% endif %}">満</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('update_quantity', item_id=item.id, new_level=2) }}" style="display: inline;">
+                        <button type="submit" class="qty-btn {% if item.quantity_level == 2 %}active level-2{% endif %}">半</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('update_quantity', item_id=item.id, new_level=3) }}" style="display: inline;">
+                        <button type="submit" class="qty-btn {% if item.quantity_level == 3 %}active level-3{% endif %}">少</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('update_quantity', item_id=item.id, new_level=4) }}" style="display: inline;">
+                        <button type="submit" class="qty-btn {% if item.quantity_level == 4 %}active level-4{% endif %}">無</button>
+                    </form>
+                </div>
+                
+                <div class="item-actions">
+                    <a href="{{ url_for('edit', item_id=item.id) }}" class="btn btn-small">編集</a>
+                    <form method="POST" action="{{ url_for('delete_item', item_id=item.id) }}" style="display: inline;" onsubmit="return confirm('本当に削除しますか?');">
+                        <button type="submit" class="btn btn-small btn-danger">削除</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-items">調味料が登録されていません。[+ 新規登録]から追加してください。</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}共有設定 - 冷蔵庫管理アプリ{% endblock %}
+
+{% block content %}
+<div class="share-page">
+    <h1>共有設定: 家族の冷蔵庫</h1>
+    
+    <h2>共有メンバー (3人)</h2>
+    
+    <div class="members-list">
+        <div class="member-card">
+            <span class="member-icon">👤</span>
+            <div class="member-info">
+                <p class="member-name">田中太郎 <span class="badge">あなた</span></p>
+                <p class="member-role">オーナー</p>
+            </div>
+        </div>
+        
+        <div class="member-card">
+            <span class="member-icon">👤</span>
+            <div class="member-info">
+                <p class="member-name">田中花子</p>
+                <p class="member-role">メンバー</p>
+            </div>
+        </div>
+        
+        <div class="member-card">
+            <span class="member-icon">👤</span>
+            <div class="member-info">
+                <p class="member-name">田中一郎</p>
+                <p class="member-role">メンバー</p>
+            </div>
+        </div>
+    </div>
+    
+    <button class="btn btn-secondary" disabled>
+        + メンバーを招待 (今後実装予定)
+    </button>
+    
+    <div class="form-actions">
+        <a href="{{ url_for('items_list') }}" class="btn btn-primary">戻る</a>
+    </div>
+</div>
+{% endblock %}

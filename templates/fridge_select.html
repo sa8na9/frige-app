@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}冷蔵庫を選択 - 冷蔵庫管理アプリ{% endblock %}
+
+{% block content %}
+<div class="fridge-select-page">
+    <h1>冷蔵庫を選択</h1>
+    
+    <div class="fridge-list">
+        <div class="fridge-card">
+            <div class="fridge-info">
+                <h2>家族の冷蔵庫</h2>
+                <p class="member-count">3人が使用中</p>
+            </div>
+            <a href="{{ url_for('items_list') }}" class="btn btn-primary">選択 →</a>
+        </div>
+    </div>
+    
+    <button class="btn btn-secondary" disabled>
+        + 新しい冷蔵庫を作成 (今後実装予定)
+    </button>
+</div>
+{% endblock %}

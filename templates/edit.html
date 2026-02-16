@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}調味料編集 - 冷蔵庫管理アプリ{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <h1>調味料編集</h1>
+    
+    <form method="POST" action="{{ url_for('edit_post', item_id=item.id) }}">
+        <div class="form-group">
+            <label for="name">調味料名 <span class="required">*必須</span> <span class="char-limit">(50文字以内)</span></label>
+            <input type="text" id="name" name="name" value="{{ item.name }}" maxlength="50" required oninput="checkNameLength(this)">
+            <div id="name-error" class="error-message" style="display: none;">50文字以内にしてください</div>
+            <div id="name-count" class="char-count">0 / 50文字</div>
+        </div>
+        
+        <div class="form-group">
+            <label>容器タイプ</label>
+            <div class="radio-group">
+                <label>
+                    <input type="radio" name="container_type" value="1" {% if item.container_type == 1 %}checked{% endif %}>
+                    液体
+                </label>
+                <label>
+                    <input type="radio" name="container_type" value="2" {% if item.container_type == 2 %}checked{% endif %}>
+                    チューブ
+                </label>
+                <label>
+                    <input type="radio" name="container_type" value="3" {% if item.container_type == 3 %}checked{% endif %}>
+                    粉末
+                </label>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>残量</label>
+            <div class="radio-group">
+                <label>
+                    <input type="radio" name="quantity_level" value="1" {% if item.quantity_level == 1 %}checked{% endif %}>
+                    満タン
+                </label>
+                <label>
+                    <input type="radio" name="quantity_level" value="2" {% if item.quantity_level == 2 %}checked{% endif %}>
+                    半分
+                </label>
+                <label>
+                    <input type="radio" name="quantity_level" value="3" {% if item.quantity_level == 3 %}checked{% endif %}>
+                    少ない
+                </label>
+                <label>
+                    <input type="radio" name="quantity_level" value="4" {% if item.quantity_level == 4 %}checked{% endif %}>
+                    なし
+                </label>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="purchase_date">購入日</label>
+            <div class="date-input-group">
+                <input type="date" id="purchase_date" name="purchase_date" value="{{ item.purchase_date }}" onchange="checkDates()">
+                <button type="button" class="btn-clear" onclick="clearDate('purchase_date')">×</button>
+            </div>
+            <div id="purchase-warning" class="warning-message" style="display: none;"></div>
+        </div>
+        
+        <div class="form-group">
+            <label for="opened_date">開封日</label>
+            <div class="date-input-group">
+                <input type="date" id="opened_date" name="opened_date" value="{{ item.opened_date or '' }}" onchange="checkDates()">
+                <button type="button" class="btn-clear" onclick="clearDate('opened_date')">×</button>
+            </div>
+            <div id="opened-warning" class="warning-message" style="display: none;"></div>
+        </div>
+        
+        <div class="form-group">
+            <label for="expiry_date">賞味期限</label>
+            <div class="date-input-group">
+                <input type="date" id="expiry_date" name="expiry_date" value="{{ item.expiry_date or '' }}" onchange="checkDates()">
+                <button type="button" class="btn-clear" onclick="clearDate('expiry_date')">×</button>
+            </div>
+            <div id="expiry-warning" class="warning-message" style="display: none;"></div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="confirmCancelAction()">キャンセル</button>
+            <button type="submit" class="btn btn-primary">更新</button>
+        </div>
+    </form>
+</div>
+
+<script>
+// 日付クリアボタン
+function clearDate(inputId) {
+    document.getElementById(inputId).value = '';
+    checkDates();
+}
+
+// 調味料名の文字数チェック
+function checkNameLength(input) {
+    const length = input.value.length;
+    const countDiv = document.getElementById('name-count');
+    const errorDiv = document.getElementById('name-error');
+    
+    countDiv.textContent = `${length} / 50文字`;
+    
+    if (length > 50) {
+        errorDiv.style.display = 'block';
+        countDiv.style.color = '#e74c3c';
+    } else {
+        errorDiv.style.display = 'none';
+        countDiv.style.color = '#666';
+    }
+}
+
+// 日付の整合性チェック
+function checkDates() {
+    const purchaseDate = document.getElementById('purchase_date').value;
+    const openedDate = document.getElementById('opened_date').value;
+    const expiryDate = document.getElementById('expiry_date').value;
+    const purchaseWarning = document.getElementById('purchase-warning');
+    const openedWarning = document.getElementById('opened-warning');
+    const expiryWarning = document.getElementById('expiry-warning');
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 購入日が未来の場合
+    if (purchaseDate && purchaseDate > today) {
+        purchaseWarning.textContent = '⚠️ 購入日が未来の日付です';
+        purchaseWarning.style.display = 'block';
+    } else {
+        purchaseWarning.style.display = 'none';
+    }
+    
+    // 開封日が購入日より前の場合
+    if (purchaseDate && openedDate && openedDate < purchaseDate) {
+        openedWarning.textContent = '⚠️ 開封日が購入日より前です';
+        openedWarning.style.display = 'block';
+    } else {
+        openedWarning.style.display = 'none';
+    }
+    
+    // 賞味期限が購入日より前の場合
+    if (purchaseDate && expiryDate && expiryDate < purchaseDate) {
+        expiryWarning.textContent = '⚠️ 賞味期限が購入日より前です';
+        expiryWarning.style.display = 'block';
+    } else {
+        expiryWarning.style.display = 'none';
+    }
+}
+
+// ページ読み込み時に初期文字数を表示
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('name');
+    checkNameLength(nameInput);
+    checkDates();
+    
+    // フォーム送信時のバリデーション
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        // 調味料名が空または50文字超過
+        if (!nameInput.value.trim()) {
+            e.preventDefault();
+            alert('調味料名を入力してください');
+            return false;
+        }
+        
+        if (nameInput.value.length > 50) {
+            e.preventDefault();
+            alert('調味料名は50文字以内にしてください');
+            return false;
+        }
+    });
+});
+
+function confirmCancelAction() {
+    if (confirm('変更内容は破棄されます。よろしいですか?')) {
+        window.location.href = "{{ url_for('items_list') }}";
+    }
+}
+</script>
+{% endblock %}
