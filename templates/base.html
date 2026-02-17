@@ -7,6 +7,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    {% if show_back_button %}
+    <div class="app-header">
+        <a href="{{ url_for('fridge_select') }}" class="back-link">← 冷蔵庫選択へ戻る</a>
+        <span class="app-title">🧊 冷蔵庫管理アプリ</span>
+    </div>
+    {% endif %}
+
     <div class="container">
         <!-- フラッシュメッセージ -->
         {% with messages = get_flashed_messages(with_categories=true) %}

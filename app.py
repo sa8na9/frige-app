@@ -43,7 +43,7 @@ def get_db_connection():
 # 冷蔵庫選択画面(ハリボテ)
 @app.route('/')
 def fridge_select():
-    return render_template('fridge_select.html')
+    return render_template('fridge_select.html', show_back_button=False)
 
 # 調味料一覧画面(メイン)
 @app.route('/items')
@@ -140,7 +140,7 @@ def items_list():
     cursor.close()
     conn.close()
     
-    return render_template('index.html', items=items, current_sort=sort_by)
+    return render_template('index.html', items=items, current_sort=sort_by, show_back_button=True)
 
 # 残量をワンタップで更新
 @app.route('/update_quantity/<int:item_id>/<int:new_level>', methods=['POST'])
@@ -181,7 +181,7 @@ def delete_item(item_id):
 # 調味料登録画面
 @app.route('/register')
 def register():
-    return render_template('register.html')
+    return render_template('register.html', show_back_button=True)
 
 # 調味料登録処理
 @app.route('/register', methods=['POST'])
@@ -234,7 +234,7 @@ def edit(item_id):
         flash('調味料が見つかりません', 'error')
         return redirect(url_for('items_list'))
     
-    return render_template('edit.html', item=item)
+    return render_template('edit.html', item=item, show_back_button=True)
 
 # 調味料更新処理
 @app.route('/edit/<int:item_id>', methods=['POST'])
@@ -272,7 +272,7 @@ def edit_post(item_id):
 # 共有設定画面(ハリボテ)
 @app.route('/share_settings')
 def share_settings():
-    return render_template('share_settings.html')
+    return render_template('share_settings.html', show_back_button=True)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
