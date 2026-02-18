@@ -4,178 +4,125 @@
 
 {% block content %}
 <div class="form-page">
-    <h1>調味料編集</h1>
+    <h1>調味料の編集</h1>
     
-    <form method="POST" action="{{ url_for('edit_post', item_id=item.id) }}">
+    <form method="POST" id="editForm">
+        <!-- 調味料名 -->
         <div class="form-group">
-            <label for="name">調味料名 <span class="required">*必須</span> <span class="char-limit">(50文字以内)</span></label>
-            <input type="text" id="name" name="name" value="{{ item.name }}" maxlength="50" required oninput="checkNameLength(this)">
-            <div id="name-error" class="error-message" style="display: none;">50文字以内にしてください</div>
-            <div id="name-count" class="char-count">0 / 50文字</div>
+            <label for="name">調味料名 <span class="required">*必須</span></label>
+            <input type="text" id="name" name="name" value="{{ item.name }}" required maxlength="50">
+            <div class="char-count"><span id="charCount">{{ item.name|length }}</span> / 50文字</div>
         </div>
         
+        <!-- 容器タイプ -->
         <div class="form-group">
-            <label>容器タイプ</label>
+            <label>容器タイプ <span class="required">*必須</span></label>
             <div class="radio-group">
-                <label>
-                    <input type="radio" name="container_type" value="1" {% if item.container_type == 1 %}checked{% endif %}>
-                    液体
-                </label>
-                <label>
-                    <input type="radio" name="container_type" value="2" {% if item.container_type == 2 %}checked{% endif %}>
-                    チューブ
-                </label>
-                <label>
-                    <input type="radio" name="container_type" value="3" {% if item.container_type == 3 %}checked{% endif %}>
-                    粉末
-                </label>
+                <label><input type="radio" name="container_type" value="1" {% if item.container_type == 1 %}checked{% endif %}> 液体ボトル</label>
+                <label><input type="radio" name="container_type" value="2" {% if item.container_type == 2 %}checked{% endif %}> チューブ</label>
+                <label><input type="radio" name="container_type" value="3" {% if item.container_type == 3 %}checked{% endif %}> 粉末ボトル</label>
             </div>
         </div>
         
+        <!-- 残量レベル -->
         <div class="form-group">
-            <label>残量</label>
+            <label>残量レベル <span class="required">*必須</span></label>
             <div class="radio-group">
-                <label>
-                    <input type="radio" name="quantity_level" value="1" {% if item.quantity_level == 1 %}checked{% endif %}>
-                    満タン
-                </label>
-                <label>
-                    <input type="radio" name="quantity_level" value="2" {% if item.quantity_level == 2 %}checked{% endif %}>
-                    半分
-                </label>
-                <label>
-                    <input type="radio" name="quantity_level" value="3" {% if item.quantity_level == 3 %}checked{% endif %}>
-                    少ない
-                </label>
-                <label>
-                    <input type="radio" name="quantity_level" value="4" {% if item.quantity_level == 4 %}checked{% endif %}>
-                    なし
-                </label>
+                <label><input type="radio" name="quantity_level" value="1" {% if item.quantity_level == 1 %}checked{% endif %}> 満タン</label>
+                <label><input type="radio" name="quantity_level" value="2" {% if item.quantity_level == 2 %}checked{% endif %}> 半分</label>
+                <label><input type="radio" name="quantity_level" value="3" {% if item.quantity_level == 3 %}checked{% endif %}> 少ない</label>
+                <label><input type="radio" name="quantity_level" value="4" {% if item.quantity_level == 4 %}checked{% endif %}> なし</label>
             </div>
         </div>
         
-        <div class="form-group">
-            <label for="purchase_date">購入日</label>
-            <div class="date-input-group">
-                <input type="date" id="purchase_date" name="purchase_date" value="{{ item.purchase_date }}" onchange="checkDates()">
-                <button type="button" class="btn-clear" onclick="clearDate('purchase_date')">×</button>
-            </div>
-            <div id="purchase-warning" class="warning-message" style="display: none;"></div>
-        </div>
-        
-        <div class="form-group">
-            <label for="opened_date">開封日</label>
-            <div class="date-input-group">
-                <input type="date" id="opened_date" name="opened_date" value="{{ item.opened_date or '' }}" onchange="checkDates()">
-                <button type="button" class="btn-clear" onclick="clearDate('opened_date')">×</button>
-            </div>
-            <div id="opened-warning" class="warning-message" style="display: none;"></div>
-        </div>
-        
+        <!-- 賞味期限 -->
         <div class="form-group">
             <label for="expiry_date">賞味期限</label>
-            <div class="date-input-group">
-                <input type="date" id="expiry_date" name="expiry_date" value="{{ item.expiry_date or '' }}" onchange="checkDates()">
-                <button type="button" class="btn-clear" onclick="clearDate('expiry_date')">×</button>
+            <input type="date" id="expiry_date" name="expiry_date" value="{{ item.expiry_date }}">
+            <div id="expiryWarning" class="warning-message" style="display: none;">
+                ⚠️ 賞味期限が過去の日付です
             </div>
-            <div id="expiry-warning" class="warning-message" style="display: none;"></div>
         </div>
         
+        <!-- 開封日 -->
+        <div class="form-group">
+            <label for="opened_date">開封日</label>
+            <input type="date" id="opened_date" name="opened_date" value="{{ item.opened_date }}">
+            <div id="openedWarning" class="warning-message" style="display: none;">
+                ⚠️ 開封日が未来の日付です
+            </div>
+        </div>
+        
+        <!-- メモ -->
+        <div class="form-group">
+            <label for="memo">メモ</label>
+            <textarea id="memo" name="memo" rows="3" maxlength="200" placeholder="例: 鍋料理用、辛口">{{ item.memo or '' }}</textarea>
+            <div class="char-count"><span id="memoCount">{{ (item.memo or '')|length }}</span> / 200文字</div>
+        </div>
+        
+        <!-- ボタン -->
         <div class="form-actions">
-            <button type="button" class="btn btn-secondary" onclick="confirmCancelAction()">キャンセル</button>
-            <button type="submit" class="btn btn-primary">更新</button>
+            <a href="{{ url_for('items_list') }}" class="btn btn-secondary">キャンセル</a>
+            <button type="submit" class="btn btn-primary">更新する</button>
         </div>
     </form>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
-// 日付クリアボタン
-function clearDate(inputId) {
-    document.getElementById(inputId).value = '';
-    checkDates();
-}
+// 文字数カウント
+const nameInput = document.getElementById('name');
+const charCount = document.getElementById('charCount');
+const memoInput = document.getElementById('memo');
+const memoCount = document.getElementById('memoCount');
 
-// 調味料名の文字数チェック
-function checkNameLength(input) {
-    const length = input.value.length;
-    const countDiv = document.getElementById('name-count');
-    const errorDiv = document.getElementById('name-error');
-    
-    countDiv.textContent = `${length} / 50文字`;
-    
-    if (length > 50) {
-        errorDiv.style.display = 'block';
-        countDiv.style.color = '#e74c3c';
-    } else {
-        errorDiv.style.display = 'none';
-        countDiv.style.color = '#666';
-    }
-}
+nameInput.addEventListener('input', () => {
+    charCount.textContent = nameInput.value.length;
+});
 
-// 日付の整合性チェック
-function checkDates() {
-    const purchaseDate = document.getElementById('purchase_date').value;
-    const openedDate = document.getElementById('opened_date').value;
-    const expiryDate = document.getElementById('expiry_date').value;
-    const purchaseWarning = document.getElementById('purchase-warning');
-    const openedWarning = document.getElementById('opened-warning');
-    const expiryWarning = document.getElementById('expiry-warning');
+memoInput.addEventListener('input', () => {
+    memoCount.textContent = memoInput.value.length;
+});
+
+// 日付検証
+const expiryDate = document.getElementById('expiry_date');
+const openedDate = document.getElementById('opened_date');
+const expiryWarning = document.getElementById('expiryWarning');
+const openedWarning = document.getElementById('openedWarning');
+
+function validateDates() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
-    const today = new Date().toISOString().split('T')[0];
-    
-    // 購入日が未来の場合
-    if (purchaseDate && purchaseDate > today) {
-        purchaseWarning.textContent = '⚠️ 購入日が未来の日付です';
-        purchaseWarning.style.display = 'block';
-    } else {
-        purchaseWarning.style.display = 'none';
-    }
-    
-    // 開封日が購入日より前の場合
-    if (purchaseDate && openedDate && openedDate < purchaseDate) {
-        openedWarning.textContent = '⚠️ 開封日が購入日より前です';
-        openedWarning.style.display = 'block';
-    } else {
-        openedWarning.style.display = 'none';
-    }
-    
-    // 賞味期限が購入日より前の場合
-    if (purchaseDate && expiryDate && expiryDate < purchaseDate) {
-        expiryWarning.textContent = '⚠️ 賞味期限が購入日より前です';
-        expiryWarning.style.display = 'block';
+    // 賞味期限が過去の日付かチェック
+    if (expiryDate.value) {
+        const expiry = new Date(expiryDate.value);
+        if (expiry < today) {
+            expiryWarning.style.display = 'block';
+        } else {
+            expiryWarning.style.display = 'none';
+        }
     } else {
         expiryWarning.style.display = 'none';
     }
-}
-
-// ページ読み込み時に初期文字数を表示
-document.addEventListener('DOMContentLoaded', function() {
-    const nameInput = document.getElementById('name');
-    checkNameLength(nameInput);
-    checkDates();
     
-    // フォーム送信時のバリデーション
-    const form = document.querySelector('form');
-    form.addEventListener('submit', function(e) {
-        // 調味料名が空または50文字超過
-        if (!nameInput.value.trim()) {
-            e.preventDefault();
-            alert('調味料名を入力してください');
-            return false;
+    // 開封日が未来の日付かチェック
+    if (openedDate.value) {
+        const opened = new Date(openedDate.value);
+        if (opened > today) {
+            openedWarning.style.display = 'block';
+        } else {
+            openedWarning.style.display = 'none';
         }
-        
-        if (nameInput.value.length > 50) {
-            e.preventDefault();
-            alert('調味料名は50文字以内にしてください');
-            return false;
-        }
-    });
-});
-
-function confirmCancelAction() {
-    if (confirm('変更内容は破棄されます。よろしいですか?')) {
-        window.location.href = "{{ url_for('items_list') }}";
+    } else {
+        openedWarning.style.display = 'none';
     }
 }
+
+// ページ読み込み時とフィールド変更時に検証
+validateDates();
+expiryDate.addEventListener('change', validateDates);
+openedDate.addEventListener('change', validateDates);
 </script>
 {% endblock %}

@@ -60,7 +60,7 @@ def items_list():
     # ソート条件を構築
     if sort_by == 'quantity':
         # 残量順: なし(4) → 少ない(3) → 半分(2) → 満タン(1)
-        order_clause = "ORDER BY quantity_level DESC, expiry_date, purchase_date DESC"
+        order_clause = "ORDER BY quantity_level DESC, expiry_date"
     else:
         # 期限順: 期限切れ → 1週間以内 → それ以降
         # 期限未設定の場合は購入日でソート
@@ -75,8 +75,7 @@ def items_list():
                         WHEN expiry_date <= CURRENT_DATE + INTERVAL '7 days' THEN 1
                         ELSE 2
                     END,
-                    expiry_date,
-                    purchase_date DESC
+                    expiry_date
             """
         else:
             # MySQL用
@@ -88,8 +87,7 @@ def items_list():
                         WHEN expiry_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN 1
                         ELSE 2
                     END,
-                    expiry_date,
-                    purchase_date DESC
+                    expiry_date
             """
     
     # 調味料を取得
@@ -99,9 +97,9 @@ def items_list():
             name,
             container_type,
             quantity_level,
-            purchase_date,
             opened_date,
             expiry_date,
+            memo,
             created_at
         FROM items
         WHERE fridge_id = 1
@@ -136,6 +134,20 @@ def items_list():
             item['expiry_status'] = 'none'
             item['expiry_class'] = ''
             item['expiry_icon'] = ''
+
+        # 開封日からの経過日数
+        if item['opened_date']:
+            days = (today - item['opened_date']).days
+            item['days_since_open'] = days
+            if days >= 90:
+                item['days_since_open_class'] = 'days-open-danger'   # 90日以上: 赤
+            elif days >= 30:
+                item['days_since_open_class'] = 'days-open-warning'  # 30日以上: 黄
+            else:
+                item['days_since_open_class'] = 'days-open-normal'   # 30日未満: 通常
+        else:
+            item['days_since_open'] = None
+            item['days_since_open_class'] = ''
     
     cursor.close()
     conn.close()
@@ -189,9 +201,9 @@ def register_post():
     name = request.form.get('name')
     container_type = request.form.get('container_type', 1, type=int)
     quantity_level = request.form.get('quantity_level', 1, type=int)
-    purchase_date = request.form.get('purchase_date') or datetime.now().date()
     opened_date = request.form.get('opened_date') or None
     expiry_date = request.form.get('expiry_date') or None
+    memo = request.form.get('memo') or None
     
     # バリデーション
     if not name or len(name) > 50:
@@ -202,10 +214,10 @@ def register_post():
     cursor = conn.cursor()
     
     query = """
-        INSERT INTO items (fridge_id, name, container_type, quantity_level, purchase_date, opened_date, expiry_date)
+        INSERT INTO items (fridge_id, name, container_type, quantity_level, opened_date, expiry_date, memo)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
-    cursor.execute(query, (1, name, container_type, quantity_level, purchase_date, opened_date, expiry_date))
+    cursor.execute(query, (1, name, container_type, quantity_level, opened_date, expiry_date, memo))
     conn.commit()
     
     cursor.close()
@@ -242,9 +254,9 @@ def edit_post(item_id):
     name = request.form.get('name')
     container_type = request.form.get('container_type', type=int)
     quantity_level = request.form.get('quantity_level', type=int)
-    purchase_date = request.form.get('purchase_date')
     opened_date = request.form.get('opened_date') or None
     expiry_date = request.form.get('expiry_date') or None
+    memo = request.form.get('memo') or None
     
     # バリデーション
     if not name or len(name) > 50:
@@ -256,11 +268,10 @@ def edit_post(item_id):
     
     query = """
         UPDATE items 
-        SET name = %s, container_type = %s, quantity_level = %s, 
-            purchase_date = %s, opened_date = %s, expiry_date = %s
+        SET name = %s, container_type = %s, quantity_level = %s, opened_date = %s, expiry_date = %s, memo = %s
         WHERE id = %s
     """
-    cursor.execute(query, (name, container_type, quantity_level, purchase_date, opened_date, expiry_date, item_id))
+    cursor.execute(query, (name, container_type, quantity_level, opened_date, expiry_date, memo, item_id))
     conn.commit()
     
     cursor.close()
@@ -273,6 +284,177 @@ def edit_post(item_id):
 @app.route('/share_settings')
 def share_settings():
     return render_template('share_settings.html', show_back_button=True)
+
+# ==================== 買い物リスト機能 ====================
+
+# 買い物リスト画面
+@app.route('/shopping_list')
+def shopping_list():
+    conn = get_db_connection()
+    if USE_PRODUCTION:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    else:
+        cursor = conn.cursor(dictionary=True)
+    
+    query = "SELECT * FROM shopping_list WHERE fridge_id = 1 ORDER BY created_at"
+    cursor.execute(query)
+    items = cursor.fetchall()
+    
+    # 容器タイプのテキスト追加
+    container_types = {1: '液体', 2: 'チューブ', 3: '粉末'}
+    for item in items:
+        item['container_type_text'] = container_types.get(item['container_type'], '不明')
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('shopping_list.html', items=items, show_back_button=True)
+
+# 買い物リストに追加
+@app.route('/add_to_shopping_list/<int:item_id>', methods=['POST'])
+def add_to_shopping_list(item_id):
+    conn = get_db_connection()
+    if USE_PRODUCTION:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    else:
+        cursor = conn.cursor(dictionary=True)
+    
+    # 調味料情報を取得
+    query = "SELECT name, container_type, memo FROM items WHERE id = %s"
+    cursor.execute(query, (item_id,))
+    item = cursor.fetchone()
+    
+    if item:
+        # 買い物リストに追加
+        query = "INSERT INTO shopping_list (fridge_id, item_name, container_type, memo) VALUES (%s, %s, %s, %s)"
+        cursor.execute(query, (1, item['name'], item['container_type'], item['memo']))
+        conn.commit()
+        flash(f'{item["name"]}を買い物リストに追加しました', 'success')
+    
+    cursor.close()
+    conn.close()
+    
+    return redirect(url_for('items_list'))
+
+# 買い物リストのチェック状態を切り替え
+@app.route('/toggle_shopping_check/<int:shopping_id>', methods=['POST'])
+def toggle_shopping_check(shopping_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    query = "UPDATE shopping_list SET is_checked = NOT is_checked WHERE id = %s"
+    cursor.execute(query, (shopping_id,))
+    conn.commit()
+    
+    cursor.close()
+    conn.close()
+    
+    return redirect(url_for('shopping_list'))
+
+# 買い物リストから新規登録画面へ
+@app.route('/purchase_from_list/<int:shopping_id>')
+def purchase_from_list(shopping_id):
+    conn = get_db_connection()
+    if USE_PRODUCTION:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    else:
+        cursor = conn.cursor(dictionary=True)
+    
+    query = "SELECT * FROM shopping_list WHERE id = %s"
+    cursor.execute(query, (shopping_id,))
+    shopping_item = cursor.fetchone()
+    
+    cursor.close()
+    conn.close()
+    
+    if not shopping_item:
+        flash('買い物リストに見つかりません', 'error')
+        return redirect(url_for('shopping_list'))
+    
+    return render_template('purchase_from_list.html', shopping_item=shopping_item, show_back_button=True)
+
+# 買い物リストから登録処理
+@app.route('/purchase_from_list/<int:shopping_id>', methods=['POST'])
+def purchase_from_list_post(shopping_id):
+    name = request.form.get('name')
+    container_type = request.form.get('container_type', type=int)
+    quantity_level = request.form.get('quantity_level', type=int)
+    opened_date = request.form.get('opened_date') or None
+    expiry_date = request.form.get('expiry_date') or None
+    memo = request.form.get('memo') or None
+    
+    # バリデーション
+    if not name or len(name) > 50:
+        flash('調味料名は必須です(50文字以内)', 'error')
+        return redirect(url_for('purchase_from_list', shopping_id=shopping_id))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # 調味料を登録
+    query = """
+        INSERT INTO items (fridge_id, name, container_type, quantity_level, opened_date, expiry_date, memo)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    """
+    cursor.execute(query, (1, name, container_type, quantity_level, opened_date, expiry_date, memo))
+    
+    # 買い物リストから削除
+    query = "DELETE FROM shopping_list WHERE id = %s"
+    cursor.execute(query, (shopping_id,))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    flash('調味料を登録しました', 'success')
+    return redirect(url_for('shopping_list'))
+
+# 買い物リスト手動登録画面
+@app.route('/add_shopping_manual')
+def add_shopping_manual():
+    return render_template('add_shopping_manual.html', show_back_button=True)
+
+# 買い物リスト手動登録処理
+@app.route('/add_shopping_manual', methods=['POST'])
+def add_shopping_manual_post():
+    item_name = request.form.get('item_name')
+    container_type = request.form.get('container_type', 1, type=int)
+    memo = request.form.get('memo') or None
+    
+    # バリデーション
+    if not item_name or len(item_name) > 50:
+        flash('調味料名は必須です(50文字以内)', 'error')
+        return redirect(url_for('add_shopping_manual'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    query = "INSERT INTO shopping_list (fridge_id, item_name, container_type, memo) VALUES (%s, %s, %s, %s)"
+    cursor.execute(query, (1, item_name, container_type, memo))
+    conn.commit()
+    
+    cursor.close()
+    conn.close()
+    
+    flash(f'{item_name}を買い物リストに追加しました', 'success')
+    return redirect(url_for('shopping_list'))
+
+# 買い物終了（チェック済みアイテム削除）
+@app.route('/finish_shopping', methods=['POST'])
+def finish_shopping():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    query = "DELETE FROM shopping_list WHERE fridge_id = 1 AND is_checked = TRUE"
+    cursor.execute(query)
+    deleted_count = cursor.rowcount
+    conn.commit()
+    
+    cursor.close()
+    conn.close()
+    
+    flash(f'チェック済みの{deleted_count}件を削除しました', 'success')
+    return redirect(url_for('shopping_list'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

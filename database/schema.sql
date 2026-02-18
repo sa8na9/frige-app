@@ -3,7 +3,7 @@
 -- =============================================
 -- データベース: fridge_app
 -- 作成日: 2025-02-15
--- 更新日: 2026-02-17 (opened_date追加)
+-- 更新日: 2026-02-18 (purchase_date削除)
 -- =============================================
 
 -- 既存のテーブルを削除(開発時のリセット用)
@@ -54,7 +54,6 @@ CREATE TABLE items (
     name VARCHAR(50) NOT NULL,
     container_type INT NOT NULL,
     quantity_level INT NOT NULL DEFAULT 1,
-    purchase_date DATE DEFAULT (CURRENT_DATE),
     opened_date DATE NULL COMMENT '開封日',
     expiry_date DATE NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -67,15 +66,25 @@ CREATE TABLE items (
 -- =============================================
 -- 5. shopping_listテーブル(買い物リスト) ※Phase2で実装
 -- =============================================
+-- 買い物リストテーブル（既存のものを削除して再作成）
+DROP TABLE IF EXISTS shopping_list;
+
 CREATE TABLE shopping_list (
     id INT AUTO_INCREMENT PRIMARY KEY,
     fridge_id INT NOT NULL DEFAULT 1,
-    item_name VARCHAR(50) NOT NULL,
-    is_purchased BOOLEAN DEFAULT FALSE,
+    item_name VARCHAR(50) NOT NULL COMMENT '調味料名',
+    container_type INT NOT NULL COMMENT '容器タイプ',
+    is_checked BOOLEAN DEFAULT FALSE COMMENT 'チェック済みフラグ',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_fridge (fridge_id),
-    INDEX idx_purchased (is_purchased)
+    INDEX idx_fridge (fridge_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+-- itemsテーブルにmemoカラムを追加
+ALTER TABLE items ADD COLUMN memo TEXT NULL COMMENT 'メモ' AFTER expiry_date;
+
+-- shopping_listテーブルにmemoカラムを追加
+ALTER TABLE shopping_list ADD COLUMN memo TEXT NULL COMMENT 'メモ' AFTER container_type;
 
 -- =============================================
 -- コメント

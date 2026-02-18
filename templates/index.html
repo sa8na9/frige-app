@@ -6,7 +6,10 @@
 <div class="items-page">
     <header class="page-header">
         <h1>冷蔵庫管理アプリ</h1>
-        <a href="{{ url_for('share_settings') }}" class="btn btn-icon">⚙️ 共有設定</a>
+        <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('shopping_list') }}" class="btn btn-icon">🛒 買い物リスト</a>
+            <a href="{{ url_for('share_settings') }}" class="btn btn-icon">⚙️ 共有設定</a>
+        </div>
     </header>
     
     <div class="toolbar">
@@ -32,13 +35,15 @@
                 </div>
                 
                 <div class="item-info">
+                    {% if item.opened_date %}
                     <p class="item-dates">
-                        <span class="date-label">購入:</span> {{ item.purchase_date or '未設定' }}
-                        {% if item.opened_date %}
-                        <span class="date-separator">|</span>
                         <span class="date-label">開封:</span> {{ item.opened_date }}
-                        {% endif %}
+                        <span class="date-separator">|</span>
+                        <span class="days-since-open {{ item.days_since_open_class }}">
+                            開封から{{ item.days_since_open }}日経過
+                        </span>
                     </p>
+                    {% endif %}
                     <p class="expiry-date {{ item.expiry_class }}">
                         賞味期限: 
                         {% if item.expiry_date %}
@@ -50,6 +55,11 @@
                             未設定
                         {% endif %}
                     </p>
+                    {% if item.memo %}
+                    <p class="item-memo">
+                        <span class="memo-icon">📝</span> {{ item.memo }}
+                    </p>
+                    {% endif %}
                 </div>
                 
                 <div class="quantity-selector">
@@ -69,6 +79,11 @@
                 </div>
                 
                 <div class="item-actions">
+                    {% if item.quantity_level == 4 %}
+                    <form method="POST" action="{{ url_for('add_to_shopping_list', item_id=item.id) }}" style="display: inline;" onsubmit="return confirm('買い物リストに追加しますか？');">
+                        <button type="submit" class="btn btn-small" style="background-color: #3498db; color: white;">🛒 リストに追加</button>
+                    </form>
+                    {% endif %}
                     <a href="{{ url_for('edit', item_id=item.id) }}" class="btn btn-small">編集</a>
                     <form method="POST" action="{{ url_for('delete_item', item_id=item.id) }}" style="display: inline;" onsubmit="return confirm('本当に削除しますか?');">
                         <button type="submit" class="btn btn-small btn-danger">削除</button>
@@ -80,5 +95,8 @@
             <p class="no-items">調味料が登録されていません。[+ 新規登録]から追加してください。</p>
         {% endif %}
     </div>
+
+
+
 </div>
 {% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}買い物リスト - 冷蔵庫管理アプリ{% endblock %}
+
+{% block content %}
+<div class="shopping-list-page">
+    <header class="page-header">
+        <h1>🛒 買い物リスト</h1>
+        <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('add_shopping_manual') }}" class="btn btn-primary">+ 手動で追加</a>
+            <a href="{{ url_for('items_list') }}" class="btn btn-secondary">調味料一覧に戻る</a>
+        </div>
+    </header>
+    
+    {% if items %}
+    <div class="shopping-items-container">
+        {% for item in items %}
+        <div class="shopping-card {% if item.is_checked %}checked{% endif %}">
+            <div class="shopping-check">
+                <form method="POST" action="{{ url_for('toggle_shopping_check', shopping_id=item.id) }}" style="display: inline;">
+                    <button type="submit" class="check-btn">
+                        {% if item.is_checked %}
+                            ✓
+                        {% else %}
+                            ○
+                        {% endif %}
+                    </button>
+                </form>
+            </div>
+            
+            <div class="shopping-info">
+                <h3>{{ item.item_name }}</h3>
+                <p class="shopping-type">{{ item.container_type_text }}</p>
+                {% if item.memo %}
+                <p class="shopping-memo">📝 {{ item.memo }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="shopping-actions">
+                <a href="{{ url_for('purchase_from_list', shopping_id=item.id) }}" class="btn btn-small btn-primary">購入して登録</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="shopping-footer">
+        <form method="POST" action="{{ url_for('finish_shopping') }}" onsubmit="return confirm('チェック済みのアイテムを削除しますか？');">
+            <button type="submit" class="btn btn-danger">買い物終了（チェック済みを削除）</button>
+        </form>
+    </div>
+    {% else %}
+    <p class="no-items">買い物リストは空です。</p>
+    <p style="text-align: center; color: #888; font-size: 14px;">
+        調味料一覧で残量「無」のアイテムから追加できます。
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

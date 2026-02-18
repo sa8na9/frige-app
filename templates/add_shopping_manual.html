@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}買い物リストに追加 - 冷蔵庫管理アプリ{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <h1>🛒 買い物リストに追加</h1>
+    
+    <form method="POST">
+        <!-- 調味料名 -->
+        <div class="form-group">
+            <label for="item_name">調味料名 <span class="required">*必須</span></label>
+            <input type="text" id="item_name" name="item_name" required maxlength="50" placeholder="例: しょうゆ">
+            <div class="char-count"><span id="nameCount">0</span> / 50文字</div>
+        </div>
+        
+        <!-- 容器タイプ -->
+        <div class="form-group">
+            <label>容器タイプ <span class="required">*必須</span></label>
+            <div class="radio-group">
+                <label><input type="radio" name="container_type" value="1" checked> 液体ボトル</label>
+                <label><input type="radio" name="container_type" value="2"> チューブ</label>
+                <label><input type="radio" name="container_type" value="3"> 粉末ボトル</label>
+            </div>
+        </div>
+        
+        <!-- メモ -->
+        <div class="form-group">
+            <label for="memo">メモ</label>
+            <textarea id="memo" name="memo" rows="3" maxlength="200" placeholder="例: 大容量のもの、減塩タイプ"></textarea>
+            <div class="char-count"><span id="memoCount">0</span> / 200文字</div>
+        </div>
+        
+        <!-- ボタン -->
+        <div class="form-actions">
+            <a href="{{ url_for('shopping_list') }}" class="btn btn-secondary">キャンセル</a>
+            <button type="submit" class="btn btn-primary">買い物リストに追加</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 文字数カウント
+const nameInput = document.getElementById('item_name');
+const nameCount = document.getElementById('nameCount');
+const memoInput = document.getElementById('memo');
+const memoCount = document.getElementById('memoCount');
+
+nameInput.addEventListener('input', () => {
+    nameCount.textContent = nameInput.value.length;
+});
+
+memoInput.addEventListener('input', () => {
+    memoCount.textContent = memoInput.value.length;
+});
+</script>
+{% endblock %}

@@ -569,3 +569,232 @@ body {
     margin: 0 8px;
     color: #999;
 }
+
+/* =============================================
+   開封日からの経過日数
+   ============================================= */
+.days-since-open {
+    font-size: 12px;
+    font-weight: bold;
+    padding: 1px 6px;
+    border-radius: 3px;
+}
+
+.days-open-normal {
+    color: #27ae60;
+}
+
+.days-open-warning {
+    color: #f39c12;
+}
+
+.days-open-danger {
+    color: #e74c3c;
+}
+
+/* =============================================
+   買い物リスト
+   ============================================= */
+.shopping-list {
+    margin-top: 30px;
+    background: white;
+    border: 2px solid #e74c3c;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.shopping-list-title {
+    font-size: 18px;
+    color: #e74c3c;
+    margin-bottom: 6px;
+}
+
+.shopping-list-subtitle {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 14px;
+}
+
+.shopping-items {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.shopping-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #fff5f5;
+    border: 1px solid #f5c6cb;
+    border-radius: 6px;
+    font-size: 15px;
+}
+
+.shopping-item::before {
+    content: "🛒";
+    font-size: 16px;
+}
+
+.shopping-item-name {
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.shopping-item-type {
+    color: #888;
+    font-size: 13px;
+}
+
+@media (max-width: 600px) {
+    .shopping-list {
+        padding: 15px;
+    }
+}
+
+/* =============================================
+   買い物リストページ
+   ============================================= */
+.shopping-list-page {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.shopping-items-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.shopping-card {
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.2s;
+}
+
+.shopping-card.checked {
+    background: #f8f9fa;
+    border-color: #28a745;
+    opacity: 0.7;
+}
+
+.shopping-check {
+    flex-shrink: 0;
+}
+
+.check-btn {
+    width: 32px;
+    height: 32px;
+    border: 2px solid #999;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    color: #28a745;
+    transition: all 0.2s;
+}
+
+.check-btn:hover {
+    border-color: #28a745;
+    background: #f0fff4;
+}
+
+.shopping-card.checked .check-btn {
+    background: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.shopping-info {
+    flex: 1;
+}
+
+.shopping-info h3 {
+    font-size: 18px;
+    color: #2c3e50;
+    margin: 0 0 4px 0;
+}
+
+.shopping-type {
+    font-size: 14px;
+    color: #888;
+    margin: 0;
+}
+
+.shopping-actions {
+    flex-shrink: 0;
+}
+
+.shopping-footer {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid #ddd;
+    display: flex;
+    justify-content: center;
+}
+
+@media (max-width: 600px) {
+    .shopping-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .shopping-actions {
+        width: 100%;
+    }
+    
+    .shopping-actions .btn {
+        width: 100%;
+    }
+}
+
+/* =============================================
+   メモ表示
+   ============================================= */
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.item-memo {
+    font-size: 13px;
+    color: #555;
+    background: #f8f9fa;
+    padding: 8px 10px;
+    border-left: 3px solid #3498db;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+.memo-icon {
+    margin-right: 4px;
+}
+
+.shopping-memo {
+    font-size: 13px;
+    color: #666;
+    margin-top: 4px;
+    font-style: italic;
+}
