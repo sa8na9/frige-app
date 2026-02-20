@@ -40,12 +40,26 @@ def get_db_connection():
         print("🔗 MySQL(XAMPP)に接続しています...")
         return mysql.connector.connect(**config)
 
+# カテゴリ一覧を取得（他の関数から呼び出す用）
+def get_categories(conn):
+    if USE_PRODUCTION:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    else:
+        cursor = conn.cursor(dictionary=True)
+    
+    query = "SELECT * FROM categories WHERE fridge_id = 1 ORDER BY id"
+    cursor.execute(query)
+    categories = cursor.fetchall()
+    cursor.close()
+    
+    return categories
+
 # 冷蔵庫選択画面(ハリボテ)
 @app.route('/')
 def fridge_select():
     return render_template('fridge_select.html', show_back_button=False)
 
-# 調味料一覧画面(メイン)
+# 調味料一覧画面(メイン) - カテゴリ対応版
 @app.route('/items')
 def items_list():
     conn = get_db_connection()
@@ -54,19 +68,20 @@ def items_list():
     else:
         cursor = conn.cursor(dictionary=True)
     
+    # カテゴリ一覧を取得
+    categories = get_categories(conn)
+    
+    # カテゴリIDを取得（デフォルトは1：調味料）
+    category_id = request.args.get('category', 1, type=int)
+    
     # ソートパラメータを取得
-    sort_by = request.args.get('sort', 'expiry')  # デフォルトは期限順
+    sort_by = request.args.get('sort', 'expiry')
     
     # ソート条件を構築
     if sort_by == 'quantity':
-        # 残量順: なし(4) → 少ない(3) → 半分(2) → 満タン(1)
         order_clause = "ORDER BY quantity_level DESC, expiry_date"
     else:
-        # 期限順: 期限切れ → 1週間以内 → それ以降
-        # 期限未設定の場合は購入日でソート
-        # MySQL/PostgreSQL両対応版
         if USE_PRODUCTION:
-            # PostgreSQL用
             order_clause = """
                 ORDER BY 
                     CASE 
@@ -78,7 +93,6 @@ def items_list():
                     expiry_date
             """
         else:
-            # MySQL用
             order_clause = """
                 ORDER BY 
                     CASE 
@@ -90,7 +104,7 @@ def items_list():
                     expiry_date
             """
     
-    # 調味料を取得
+    # 調味料を取得（カテゴリでフィルタ）
     query = f"""
         SELECT 
             id,
@@ -102,28 +116,27 @@ def items_list():
             memo,
             created_at
         FROM items
-        WHERE fridge_id = 1
+        WHERE fridge_id = 1 AND category_id = %s
         {order_clause}
     """
     
-    cursor.execute(query)
+    cursor.execute(query, (category_id,))
     items = cursor.fetchall()
     
     # 各調味料に追加情報を付与
     today = datetime.now().date()
     for item in items:
-        # 容器タイプのテキスト
         container_types = {1: '液体', 2: 'チューブ', 3: '粉末'}
         item['container_type_text'] = container_types.get(item['container_type'], '不明')
         
         # 賞味期限のステータス
         if item['expiry_date']:
             if item['expiry_date'] < today:
-                item['expiry_status'] = 'expired'  # 期限切れ
+                item['expiry_status'] = 'expired'
                 item['expiry_class'] = 'text-danger'
                 item['expiry_icon'] = '❌'
             elif item['expiry_date'] <= today + timedelta(days=7):
-                item['expiry_status'] = 'warning'  # 1週間以内
+                item['expiry_status'] = 'warning'
                 item['expiry_class'] = 'text-warning'
                 item['expiry_icon'] = '⚠️'
             else:
@@ -140,19 +153,30 @@ def items_list():
             days = (today - item['opened_date']).days
             item['days_since_open'] = days
             if days >= 90:
-                item['days_since_open_class'] = 'days-open-danger'   # 90日以上: 赤
+                item['days_since_open_class'] = 'days-open-danger'
             elif days >= 30:
-                item['days_since_open_class'] = 'days-open-warning'  # 30日以上: 黄
+                item['days_since_open_class'] = 'days-open-warning'
             else:
-                item['days_since_open_class'] = 'days-open-normal'   # 30日未満: 通常
+                item['days_since_open_class'] = 'days-open-normal'
         else:
             item['days_since_open'] = None
             item['days_since_open_class'] = ''
+        
+        # リストに追加ボタンを表示するか（期限切れ OR 残量無）
+        item['show_add_to_list'] = (
+            item['quantity_level'] == 4 or 
+            (item['expiry_date'] and item['expiry_date'] < today)
+        )
     
     cursor.close()
     conn.close()
     
-    return render_template('index.html', items=items, current_sort=sort_by, show_back_button=True)
+    return render_template('index.html', 
+                         items=items, 
+                         categories=categories,
+                         current_category=category_id,
+                         current_sort=sort_by, 
+                         show_back_button=True)
 
 # 残量をワンタップで更新
 @app.route('/update_quantity/<int:item_id>/<int:new_level>', methods=['POST'])
@@ -162,8 +186,18 @@ def update_quantity(item_id, new_level):
         return redirect(url_for('items_list'))
     
     conn = get_db_connection()
-    cursor = conn.cursor()
+    if USE_PRODUCTION:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    else:
+        cursor = conn.cursor(dictionary=True)
     
+    # アイテムのcategory_idを取得
+    query = "SELECT category_id FROM items WHERE id = %s"
+    cursor.execute(query, (item_id,))
+    item = cursor.fetchone()
+    category_id = item['category_id'] if item else 1
+    
+    # 残量を更新
     query = "UPDATE items SET quantity_level = %s WHERE id = %s"
     cursor.execute(query, (new_level, item_id))
     conn.commit()
@@ -172,14 +206,24 @@ def update_quantity(item_id, new_level):
     conn.close()
     
     flash('残量を更新しました', 'success')
-    return redirect(url_for('items_list'))
+    return redirect(url_for('items_list', category=category_id))
 
 # 調味料削除(確認ダイアログはJavaScriptで実装)
 @app.route('/delete/<int:item_id>', methods=['POST'])
 def delete_item(item_id):
     conn = get_db_connection()
-    cursor = conn.cursor()
+    if USE_PRODUCTION:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    else:
+        cursor = conn.cursor(dictionary=True)
     
+    # アイテムのcategory_idを取得
+    query = "SELECT category_id FROM items WHERE id = %s"
+    cursor.execute(query, (item_id,))
+    item = cursor.fetchone()
+    category_id = item['category_id'] if item else 1
+    
+    # 削除
     query = "DELETE FROM items WHERE id = %s"
     cursor.execute(query, (item_id,))
     conn.commit()
@@ -188,17 +232,37 @@ def delete_item(item_id):
     conn.close()
     
     flash('調味料を削除しました', 'success')
-    return redirect(url_for('items_list'))
+    return redirect(url_for('items_list', category=category_id))
 
 # 調味料登録画面
 @app.route('/register')
 def register():
-    return render_template('register.html', show_back_button=True)
+    conn = get_db_connection()
+    categories = get_categories(conn)
+    
+    # 現在選択中のカテゴリIDを取得（デフォルトは1）
+    current_category = request.args.get('category', 1, type=int)
+    
+    # カテゴリ名を取得
+    category_name = '調味料'
+    for cat in categories:
+        if cat['id'] == current_category:
+            category_name = cat['name']
+            break
+    
+    conn.close()
+    
+    return render_template('register.html', 
+                         categories=categories, 
+                         current_category=current_category,
+                         category_name=category_name,
+                         show_back_button=True)
 
 # 調味料登録処理
 @app.route('/register', methods=['POST'])
 def register_post():
     name = request.form.get('name')
+    category_id = request.form.get('category_id', 1, type=int)
     container_type = request.form.get('container_type', 1, type=int)
     quantity_level = request.form.get('quantity_level', 1, type=int)
     opened_date = request.form.get('opened_date') or None
@@ -214,17 +278,17 @@ def register_post():
     cursor = conn.cursor()
     
     query = """
-        INSERT INTO items (fridge_id, name, container_type, quantity_level, opened_date, expiry_date, memo)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO items (fridge_id, category_id, name, container_type, quantity_level, opened_date, expiry_date, memo)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
-    cursor.execute(query, (1, name, container_type, quantity_level, opened_date, expiry_date, memo))
+    cursor.execute(query, (1, category_id, name, container_type, quantity_level, opened_date, expiry_date, memo))
     conn.commit()
     
     cursor.close()
     conn.close()
     
     flash('調味料を登録しました', 'success')
-    return redirect(url_for('items_list'))
+    return redirect(url_for('items_list', category=category_id))
 
 # 調味料編集画面
 @app.route('/edit/<int:item_id>')
@@ -240,18 +304,31 @@ def edit(item_id):
     item = cursor.fetchone()
     
     cursor.close()
-    conn.close()
     
     if not item:
+        conn.close()
         flash('調味料が見つかりません', 'error')
         return redirect(url_for('items_list'))
     
-    return render_template('edit.html', item=item, show_back_button=True)
+    # connを閉じる前にカテゴリを取得
+    categories = get_categories(conn)
+    
+    # カテゴリ名を取得
+    category_name = '調味料'
+    for cat in categories:
+        if cat['id'] == item['category_id']:
+            category_name = cat['name']
+            break
+    
+    conn.close()
+    
+    return render_template('edit.html', item=item, categories=categories, category_name=category_name, show_back_button=True)
 
 # 調味料更新処理
 @app.route('/edit/<int:item_id>', methods=['POST'])
 def edit_post(item_id):
     name = request.form.get('name')
+    category_id = request.form.get('category_id', type=int)
     container_type = request.form.get('container_type', type=int)
     quantity_level = request.form.get('quantity_level', type=int)
     opened_date = request.form.get('opened_date') or None
@@ -268,17 +345,17 @@ def edit_post(item_id):
     
     query = """
         UPDATE items 
-        SET name = %s, container_type = %s, quantity_level = %s, opened_date = %s, expiry_date = %s, memo = %s
+        SET category_id = %s, name = %s, container_type = %s, quantity_level = %s, opened_date = %s, expiry_date = %s, memo = %s
         WHERE id = %s
     """
-    cursor.execute(query, (name, container_type, quantity_level, opened_date, expiry_date, memo, item_id))
+    cursor.execute(query, (category_id, name, container_type, quantity_level, opened_date, expiry_date, memo, item_id))
     conn.commit()
     
     cursor.close()
     conn.close()
     
     flash('調味料を更新しました', 'success')
-    return redirect(url_for('items_list'))
+    return redirect(url_for('items_list', category=category_id))
 
 # 共有設定画面(ハリボテ)
 @app.route('/share_settings')
@@ -408,6 +485,28 @@ def purchase_from_list_post(shopping_id):
     
     flash('調味料を登録しました', 'success')
     return redirect(url_for('shopping_list'))
+
+# カテゴリ新規作成API
+@app.route('/add_category', methods=['POST'])
+def add_category():
+    name = request.form.get('name')
+    
+    if not name or len(name) > 50:
+        flash('カテゴリ名は必須です（50文字以内）', 'error')
+        return redirect(url_for('items_list'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    query = "INSERT INTO categories (fridge_id, name) VALUES (%s, %s)"
+    cursor.execute(query, (1, name))
+    conn.commit()
+    
+    cursor.close()
+    conn.close()
+    
+    flash(f'カテゴリ「{name}」を作成しました', 'success')
+    return redirect(url_for('items_list'))
 
 # 買い物リスト手動登録画面
 @app.route('/add_shopping_manual')

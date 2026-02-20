@@ -86,6 +86,27 @@ ALTER TABLE items ADD COLUMN memo TEXT NULL COMMENT 'メモ' AFTER expiry_date;
 -- shopping_listテーブルにmemoカラムを追加
 ALTER TABLE shopping_list ADD COLUMN memo TEXT NULL COMMENT 'メモ' AFTER container_type;
 
+-- MySQL用：カテゴリテーブルを作成
+CREATE TABLE IF NOT EXISTS categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fridge_id INT NOT NULL DEFAULT 1,
+    name VARCHAR(50) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_fridge (fridge_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- デフォルトカテゴリを追加
+INSERT INTO categories (fridge_id, name) VALUES
+(1, '調味料'),
+(1, '食材'),
+(1, 'レトルト');
+
+-- itemsテーブルにcategory_idカラムを追加
+ALTER TABLE items ADD COLUMN category_id INT DEFAULT 1 AFTER fridge_id;
+
+-- 既存データをすべて「調味料」カテゴリに設定
+UPDATE items SET category_id = 1;
+
 -- =============================================
 -- コメント
 -- =============================================

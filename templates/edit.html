@@ -1,17 +1,29 @@
 {% extends "base.html" %}
 
-{% block title %}調味料編集 - 冷蔵庫管理アプリ{% endblock %}
+{% block title %}{{ category_name }}編集 - 冷蔵庫管理アプリ{% endblock %}
 
 {% block content %}
 <div class="form-page">
-    <h1>調味料の編集</h1>
+    <h1>{{ category_name }}の編集</h1>
     
     <form method="POST" id="editForm">
         <!-- 調味料名 -->
         <div class="form-group">
-            <label for="name">調味料名 <span class="required">*必須</span></label>
+            <label for="name">{{ category_name }}名 <span class="required">*必須</span></label>
             <input type="text" id="name" name="name" value="{{ item.name }}" required maxlength="50">
             <div class="char-count"><span id="charCount">{{ item.name|length }}</span> / 50文字</div>
+        </div>
+        
+        <!-- カテゴリ -->
+        <div class="form-group">
+            <label for="category_id">カテゴリ <span class="required">*必須</span></label>
+            <select id="category_id" name="category_id" required>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if category.id == item.category_id %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+                {% endfor %}
+            </select>
         </div>
         
         <!-- 容器タイプ -->
@@ -62,7 +74,7 @@
         
         <!-- ボタン -->
         <div class="form-actions">
-            <a href="{{ url_for('items_list') }}" class="btn btn-secondary">キャンセル</a>
+            <a href="{{ url_for('items_list', category=item.category_id) }}" class="btn btn-secondary">キャンセル</a>
             <button type="submit" class="btn btn-primary">更新する</button>
         </div>
     </form>

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}調味料一覧 - 冷蔵庫管理アプリ{% endblock %}
+{% block title %}{{ categories[current_category - 1].name if categories else '調味料' }}一覧 - 冷蔵庫管理アプリ{% endblock %}
 
 {% block content %}
 <div class="items-page">
@@ -13,20 +13,37 @@
     </header>
     
     <div class="toolbar">
-        <div class="sort-buttons">
-            <a href="{{ url_for('items_list', sort='expiry') }}" 
-               class="btn btn-small {% if current_sort == 'expiry' %}btn-active{% endif %}">
-                期限順 ▼
-            </a>
-            <a href="{{ url_for('items_list', sort='quantity') }}" 
-               class="btn btn-small {% if current_sort == 'quantity' %}btn-active{% endif %}">
-                残量順 ▼
-            </a>
+        <!-- カテゴリ選択 -->
+        <div class="category-selector">
+            <select id="categorySelect" class="category-dropdown" onchange="changeCategory(this.value)">
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if category.id == current_category %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-small" onclick="showCategoryModal()">+ カテゴリ追加</button>
         </div>
-        <a href="{{ url_for('register') }}" class="btn btn-primary">+ 新規登録</a>
+        
+        <!-- ソートトグル & 詳細非表示 -->
+        <div class="toolbar-right">
+            <div class="toggle-buttons">
+                <button class="toggle-btn {% if current_sort == 'expiry' %}active{% endif %}" 
+                        onclick="window.location.href='{{ url_for('items_list', category=current_category, sort='expiry') }}'">
+                    期限順
+                </button>
+                <button class="toggle-btn {% if current_sort == 'quantity' %}active{% endif %}"
+                        onclick="window.location.href='{{ url_for('items_list', category=current_category, sort='quantity') }}'">
+                    残量順
+                </button>
+            </div>
+            <button class="btn btn-small" id="toggleDetailBtn" onclick="toggleDetail()">
+                詳細を非表示
+            </button>
+        </div>
     </div>
     
-    <div class="items-list">
+    <div class="items-list" id="itemsList">
         {% if items %}
             {% for item in items %}
             <div class="item-card">
@@ -34,7 +51,7 @@
                     <h3>{{ item.name }} <span class="container-type">({{ item.container_type_text }})</span></h3>
                 </div>
                 
-                <div class="item-info">
+                <div class="item-details">
                     {% if item.opened_date %}
                     <p class="item-dates">
                         <span class="date-label">開封:</span> {{ item.opened_date }}
@@ -62,7 +79,7 @@
                     {% endif %}
                 </div>
                 
-                <div class="quantity-selector">
+                <div class="quantity-selector item-details">
                     <span>残量:</span>
                     <form method="POST" action="{{ url_for('update_quantity', item_id=item.id, new_level=1) }}" style="display: inline;">
                         <button type="submit" class="qty-btn {% if item.quantity_level == 1 %}active level-1{% endif %}">満</button>
@@ -79,9 +96,9 @@
                 </div>
                 
                 <div class="item-actions">
-                    {% if item.quantity_level == 4 %}
+                    {% if item.show_add_to_list %}
                     <form method="POST" action="{{ url_for('add_to_shopping_list', item_id=item.id) }}" style="display: inline;" onsubmit="return confirm('買い物リストに追加しますか？');">
-                        <button type="submit" class="btn btn-small" style="background-color: #3498db; color: white;">🛒 リストに追加</button>
+                        <button type="submit" class="btn btn-small btn-list">🛒 リストに追加</button>
                     </form>
                     {% endif %}
                     <a href="{{ url_for('edit', item_id=item.id) }}" class="btn btn-small">編集</a>
@@ -92,11 +109,101 @@
             </div>
             {% endfor %}
         {% else %}
-            <p class="no-items">調味料が登録されていません。[+ 新規登録]から追加してください。</p>
+            <p class="no-items">このカテゴリには登録されていません。</p>
         {% endif %}
     </div>
 
-
+    <!-- 新規登録フローティングボタン -->
+    <a href="{{ url_for('register', category=current_category) }}" class="fab">
+        <span class="fab-icon">+</span>
+    </a>
 
 </div>
+
+<!-- カテゴリ新規作成モーダル -->
+<div id="categoryModal" class="modal">
+    <div class="modal-content">
+        <h2>カテゴリ追加</h2>
+        <form method="POST" action="{{ url_for('add_category') }}">
+            <div class="form-group">
+                <label for="categoryName">カテゴリ名</label>
+                <input type="text" id="categoryName" name="name" required maxlength="50" placeholder="例: 飲料、お菓子">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeCategoryModal()">キャンセル</button>
+                <button type="submit" class="btn btn-primary">追加</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div id="modalBackdrop" class="modal-backdrop" onclick="closeCategoryModal()"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// カテゴリ変更
+function changeCategory(categoryId) {
+    window.location.href = '{{ url_for("items_list") }}?category=' + categoryId + '&sort={{ current_sort }}';
+}
+
+// カテゴリモーダル表示
+function showCategoryModal() {
+    document.getElementById('categoryModal').style.display = 'block';
+    document.getElementById('modalBackdrop').style.display = 'block';
+}
+
+// カテゴリモーダル閉じる
+function closeCategoryModal() {
+    document.getElementById('categoryModal').style.display = 'none';
+    document.getElementById('modalBackdrop').style.display = 'none';
+}
+
+// 詳細表示/非表示トグル
+function toggleDetail() {
+    const details = document.querySelectorAll('.item-details');
+    const btn = document.getElementById('toggleDetailBtn');
+    const isHidden = localStorage.getItem('hideDetails') === 'true';
+    
+    if (isHidden) {
+        // 表示する
+        details.forEach(el => el.style.display = '');
+        btn.textContent = '詳細を非表示';
+        btn.classList.remove('active');
+        localStorage.setItem('hideDetails', 'false');
+    } else {
+        // 非表示にする
+        details.forEach(el => el.style.display = 'none');
+        btn.textContent = '詳細を表示';
+        btn.classList.add('active');
+        localStorage.setItem('hideDetails', 'true');
+    }
+}
+
+// ページ読み込み時に状態を復元
+window.addEventListener('DOMContentLoaded', () => {
+    const isHidden = localStorage.getItem('hideDetails') === 'true';
+    if (isHidden) {
+        const details = document.querySelectorAll('.item-details');
+        const btn = document.getElementById('toggleDetailBtn');
+        details.forEach(el => el.style.display = 'none');
+        btn.textContent = '詳細を表示';
+        btn.classList.add('active');
+    }
+    
+    // スクロール位置を復元
+    const scrollPos = sessionStorage.getItem('scrollPos');
+    if (scrollPos) {
+        window.scrollTo(0, parseInt(scrollPos));
+        sessionStorage.removeItem('scrollPos');
+    }
+});
+
+// 残量ボタンクリック時にスクロール位置を保存
+document.querySelectorAll('.qty-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        sessionStorage.setItem('scrollPos', window.scrollY);
+    });
+});
+</script>
 {% endblock %}

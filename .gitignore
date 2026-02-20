@@ -22,7 +22,7 @@ ENV/
 Thumbs.db
 
 # Config (パスワードを含むため)
-config.py
+# config.py
 
 # Database
 *.db
