@@ -996,3 +996,175 @@ select:focus {
     outline: none;
     border-color: #5fc1c7;
 }
+
+/* リストに追加済みボタン */
+.btn-list-added {
+    background-color: #95a5a6;
+    color: white;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.btn-list-added:hover {
+    background-color: #95a5a6;
+}
+
+/* =============================================
+   トースト通知（固定位置）
+   ============================================= */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.toast {
+    background: white;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 300px;
+    max-width: 400px;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.3s ease;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast.hide {
+    opacity: 0;
+    transform: translateX(400px);
+}
+
+.toast-success {
+    border-left: 4px solid #28a745;
+}
+
+.toast-error {
+    border-left: 4px solid #e74c3c;
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 14px;
+    color: #333;
+}
+
+.toast-success .toast-message::before {
+    content: "✓ ";
+    color: #28a745;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.toast-error .toast-message::before {
+    content: "✕ ";
+    color: #e74c3c;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.toast-close:hover {
+    color: #333;
+}
+
+/* レスポンシブ */
+@media (max-width: 600px) {
+    .toast-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+    }
+    
+    .toast {
+        min-width: auto;
+        max-width: none;
+    }
+}
+
+/* =============================================
+   カテゴリ管理モーダル
+   ============================================= */
+.category-list-section h3,
+.category-add-section h3 {
+    font-size: 16px;
+    color: #1d4763;
+    margin-bottom: 15px;
+}
+
+.category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.category-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 3px solid #5fc1c7;
+}
+
+.category-name {
+    font-weight: 500;
+    color: #1d4763;
+}
+
+.category-note {
+    font-size: 12px;
+    color: #999;
+    font-style: italic;
+}
+
+.btn-category-delete {
+    padding: 6px 12px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.3s;
+}
+
+.btn-category-delete:hover {
+    background: #c0392b;
+}
+
+.modal-content {
+    max-height: 80vh;
+    overflow-y: auto;
+}

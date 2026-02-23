@@ -9,19 +9,9 @@
     <form method="POST">
         <!-- 調味料名 -->
         <div class="form-group">
-            <label for="item_name">調味料名 <span class="required">*必須</span></label>
-            <input type="text" id="item_name" name="item_name" required maxlength="50" placeholder="例: しょうゆ">
+            <label for="item_name">アイテム名 <span class="required">*必須</span></label>
+            <input type="text" id="item_name" name="item_name" required maxlength="50" placeholder="例: しょうゆ、牛乳、パン">
             <div class="char-count"><span id="nameCount">0</span> / 50文字</div>
-        </div>
-        
-        <!-- 容器タイプ -->
-        <div class="form-group">
-            <label>容器タイプ <span class="required">*必須</span></label>
-            <div class="radio-group">
-                <label><input type="radio" name="container_type" value="1" checked> 液体ボトル</label>
-                <label><input type="radio" name="container_type" value="2"> チューブ</label>
-                <label><input type="radio" name="container_type" value="3"> 粉末ボトル</label>
-            </div>
         </div>
         
         <!-- メモ -->

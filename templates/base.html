@@ -7,33 +7,46 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    {% if show_back_button %}
-    <div class="app-header">
-        <a href="{{ url_for('fridge_select') }}" class="back-link">← 冷蔵庫選択へ戻る</a>
-        <span class="app-title">🧊 冷蔵庫管理アプリ</span>
-    </div>
-    {% endif %}
+    <!-- トースト通知（固定位置） -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="toast-container">
+                {% for category, message in messages %}
+                    <div class="toast toast-{{ category }}">
+                        <span class="toast-message">{{ message }}</span>
+                        <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
 
     <div class="container">
-        <!-- フラッシュメッセージ -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">
-                            {{ message }}
-                            <button onclick="this.parentElement.remove()">×</button>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-        
         <!-- メインコンテンツ -->
         {% block content %}{% endblock %}
     </div>
     
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+    // トースト通知を自動で消す
+    document.addEventListener('DOMContentLoaded', () => {
+        const toasts = document.querySelectorAll('.toast');
+        toasts.forEach((toast, index) => {
+            // フェードイン
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, index * 100);
+            
+            // 3秒後にフェードアウト
+            setTimeout(() => {
+                toast.classList.add('hide');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000 + (index * 100));
+        });
+    });
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

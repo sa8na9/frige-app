@@ -168,6 +168,20 @@ def items_list():
             (item['expiry_date'] and item['expiry_date'] < today)
         )
     
+    # 買い物リストに登録済みのitem_idを取得
+    query_shopping = "SELECT item_id FROM shopping_list WHERE fridge_id = 1 AND item_id IS NOT NULL"
+    cursor.execute(query_shopping)
+    shopping_items = cursor.fetchall()
+    shopping_item_ids = [item['item_id'] for item in shopping_items]
+    
+    # デバッグ出力
+    print(f"🛒 買い物リストのitem_id: {shopping_item_ids}")
+    
+    # 各アイテムが買い物リストに登録済みかチェック
+    for item in items:
+        item['in_shopping_list'] = item['id'] in shopping_item_ids
+        print(f"  ID {item['id']}: {item['name']} -> in_shopping_list={item['in_shopping_list']}")
+    
     cursor.close()
     conn.close()
     
@@ -377,11 +391,6 @@ def shopping_list():
     cursor.execute(query)
     items = cursor.fetchall()
     
-    # 容器タイプのテキスト追加
-    container_types = {1: '液体', 2: 'チューブ', 3: '粉末'}
-    for item in items:
-        item['container_type_text'] = container_types.get(item['container_type'], '不明')
-    
     cursor.close()
     conn.close()
     
@@ -397,21 +406,24 @@ def add_to_shopping_list(item_id):
         cursor = conn.cursor(dictionary=True)
     
     # 調味料情報を取得
-    query = "SELECT name, container_type, memo FROM items WHERE id = %s"
+    query = "SELECT name, memo, category_id FROM items WHERE id = %s"
     cursor.execute(query, (item_id,))
     item = cursor.fetchone()
     
     if item:
-        # 買い物リストに追加
-        query = "INSERT INTO shopping_list (fridge_id, item_name, container_type, memo) VALUES (%s, %s, %s, %s)"
-        cursor.execute(query, (1, item['name'], item['container_type'], item['memo']))
+        # 買い物リストに追加（item_idも保存）
+        query = "INSERT INTO shopping_list (fridge_id, item_id, item_name, memo) VALUES (%s, %s, %s, %s)"
+        cursor.execute(query, (1, item_id, item['name'], item['memo']))
         conn.commit()
         flash(f'{item["name"]}を買い物リストに追加しました', 'success')
+        category_id = item['category_id']
+    else:
+        category_id = 1
     
     cursor.close()
     conn.close()
     
-    return redirect(url_for('items_list'))
+    return redirect(url_for('items_list', category=category_id))
 
 # 買い物リストのチェック状態を切り替え
 @app.route('/toggle_shopping_check/<int:shopping_id>', methods=['POST'])
@@ -508,6 +520,55 @@ def add_category():
     flash(f'カテゴリ「{name}」を作成しました', 'success')
     return redirect(url_for('items_list'))
 
+# カテゴリ削除API
+@app.route('/delete_category', methods=['POST'])
+def delete_category():
+    category_id = request.form.get('category_id', type=int)
+    
+    conn = get_db_connection()
+    if USE_PRODUCTION:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    else:
+        cursor = conn.cursor(dictionary=True)
+    
+    # カテゴリ名を取得（削除メッセージ用）
+    query = "SELECT name FROM categories WHERE id = %s"
+    cursor.execute(query, (category_id,))
+    category = cursor.fetchone()
+    
+    if not category:
+        flash('カテゴリが見つかりません', 'error')
+        conn.close()
+        return redirect(url_for('items_list'))
+    
+    category_name = category['name']
+    
+    # カテゴリ数をチェック（最後の1つは削除不可）
+    query = "SELECT COUNT(*) as count FROM categories WHERE fridge_id = 1"
+    cursor.execute(query)
+    result = cursor.fetchone()
+    
+    if result['count'] <= 1:
+        flash('最後のカテゴリは削除できません', 'error')
+        conn.close()
+        return redirect(url_for('items_list'))
+    
+    # このカテゴリのアイテムを全て削除
+    query = "DELETE FROM items WHERE category_id = %s"
+    cursor.execute(query, (category_id,))
+    deleted_items = cursor.rowcount
+    
+    # カテゴリを削除
+    query = "DELETE FROM categories WHERE id = %s"
+    cursor.execute(query, (category_id,))
+    conn.commit()
+    
+    cursor.close()
+    conn.close()
+    
+    flash(f'カテゴリ「{category_name}」と{deleted_items}件のアイテムを削除しました', 'success')
+    return redirect(url_for('items_list'))
+
 # 買い物リスト手動登録画面
 @app.route('/add_shopping_manual')
 def add_shopping_manual():
@@ -517,19 +578,18 @@ def add_shopping_manual():
 @app.route('/add_shopping_manual', methods=['POST'])
 def add_shopping_manual_post():
     item_name = request.form.get('item_name')
-    container_type = request.form.get('container_type', 1, type=int)
     memo = request.form.get('memo') or None
     
     # バリデーション
     if not item_name or len(item_name) > 50:
-        flash('調味料名は必須です(50文字以内)', 'error')
+        flash('アイテム名は必須です(50文字以内)', 'error')
         return redirect(url_for('add_shopping_manual'))
     
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    query = "INSERT INTO shopping_list (fridge_id, item_name, container_type, memo) VALUES (%s, %s, %s, %s)"
-    cursor.execute(query, (1, item_name, container_type, memo))
+    query = "INSERT INTO shopping_list (fridge_id, item_name, memo) VALUES (%s, %s, %s)"
+    cursor.execute(query, (1, item_name, memo))
     conn.commit()
     
     cursor.close()

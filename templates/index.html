@@ -22,7 +22,7 @@
                 </option>
                 {% endfor %}
             </select>
-            <button class="btn btn-small" onclick="showCategoryModal()">+ カテゴリ追加</button>
+            <button class="btn btn-small" onclick="showCategoryModal()">カテゴリ管理</button>
         </div>
         
         <!-- ソートトグル & 詳細非表示 -->
@@ -97,9 +97,13 @@
                 
                 <div class="item-actions">
                     {% if item.show_add_to_list %}
-                    <form method="POST" action="{{ url_for('add_to_shopping_list', item_id=item.id) }}" style="display: inline;" onsubmit="return confirm('買い物リストに追加しますか？');">
-                        <button type="submit" class="btn btn-small btn-list">🛒 リストに追加</button>
-                    </form>
+                        {% if item.in_shopping_list %}
+                        <button class="btn btn-small btn-list-added" disabled>✓ リストに追加済み</button>
+                        {% else %}
+                        <form method="POST" action="{{ url_for('add_to_shopping_list', item_id=item.id) }}" style="display: inline;" onsubmit="return confirm('買い物リストに追加しますか？');">
+                            <button type="submit" class="btn btn-small btn-list">🛒 リストに追加</button>
+                        </form>
+                        {% endif %}
                     {% endif %}
                     <a href="{{ url_for('edit', item_id=item.id) }}" class="btn btn-small">編集</a>
                     <form method="POST" action="{{ url_for('delete_item', item_id=item.id) }}" style="display: inline;" onsubmit="return confirm('本当に削除しますか?');">
@@ -120,20 +124,47 @@
 
 </div>
 
-<!-- カテゴリ新規作成モーダル -->
+<!-- カテゴリ管理モーダル -->
 <div id="categoryModal" class="modal">
     <div class="modal-content">
-        <h2>カテゴリ追加</h2>
-        <form method="POST" action="{{ url_for('add_category') }}">
-            <div class="form-group">
-                <label for="categoryName">カテゴリ名</label>
-                <input type="text" id="categoryName" name="name" required maxlength="50" placeholder="例: 飲料、お菓子">
+        <h2>カテゴリ管理</h2>
+        
+        <!-- カテゴリ一覧 -->
+        <div class="category-list-section">
+            <h3>登録済みカテゴリ</h3>
+            <div class="category-list">
+                {% for category in categories %}
+                <div class="category-item">
+                    <span class="category-name">{{ category.name }}</span>
+                    {% if categories|length > 1 %}
+                    <form method="POST" action="{{ url_for('delete_category') }}" style="display: inline;" onsubmit="return confirm('「{{ category.name }}」カテゴリを削除しますか？\n\n※このカテゴリに登録されているアイテムも全て削除されます。');">
+                        <input type="hidden" name="category_id" value="{{ category.id }}">
+                        <button type="submit" class="btn-category-delete">削除</button>
+                    </form>
+                    {% else %}
+                    <span class="category-note">（最後のカテゴリは削除不可）</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
             </div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeCategoryModal()">キャンセル</button>
-                <button type="submit" class="btn btn-primary">追加</button>
-            </div>
-        </form>
+        </div>
+        
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+        
+        <!-- 新規追加フォーム -->
+        <div class="category-add-section">
+            <h3>新しいカテゴリを追加</h3>
+            <form method="POST" action="{{ url_for('add_category') }}">
+                <div class="form-group">
+                    <label for="categoryName">カテゴリ名</label>
+                    <input type="text" id="categoryName" name="name" required maxlength="50" placeholder="例: 飲料、お菓子">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCategoryModal()">閉じる</button>
+                    <button type="submit" class="btn btn-primary">追加</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 <div id="modalBackdrop" class="modal-backdrop" onclick="closeCategoryModal()"></div>
