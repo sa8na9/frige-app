@@ -186,6 +186,27 @@ body {
     position: relative;
 }
 
+/* 残量レベルによるカード色分け */
+.item-card.qty-full {
+    border-left-color: #28a745;
+    background: linear-gradient(to bottom, #ffffff 0%, #f0fff4 100%);
+}
+
+.item-card.qty-half {
+    border-left-color: #ffc107;
+    background: linear-gradient(to bottom, #ffffff 0%, #fffbf0 100%);
+}
+
+.item-card.qty-low {
+    border-left-color: #fd7e14;
+    background: linear-gradient(to bottom, #ffffff 0%, #fff5f0 100%);
+}
+
+.item-card.qty-empty {
+    border-left-color: #dc3545;
+    background: linear-gradient(to bottom, #ffffff 0%, #fff0f0 100%);
+}
+
 .item-card:hover {
     transform: translateY(-8px);
     box-shadow: 0 12px 28px rgba(0,0,0,0.15);
@@ -450,6 +471,10 @@ body {
     font-size: 36px;
     color: white;
     font-weight: 300;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* =============================================
