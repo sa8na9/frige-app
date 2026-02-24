@@ -1,23 +1,34 @@
 {% extends "base.html" %}
 
-{% block title %}冷蔵庫を選択 - 冷蔵庫管理アプリ{% endblock %}
+{% block title %}冷蔵庫選択 - 冷蔵庫管理アプリ{% endblock %}
 
 {% block content %}
 <div class="fridge-select-page">
-    <h1>冷蔵庫を選択</h1>
-    
-    <div class="fridge-list">
-        <div class="fridge-card">
-            <div class="fridge-info">
+    <div class="fridge-select-container">
+        <div class="app-logo">
+            <div class="logo-icon">🧊</div>
+            <h1>冷蔵庫管理アプリ</h1>
+            <p class="app-subtitle">食材の期限・残量を簡単管理</p>
+        </div>
+        
+        <div class="fridge-cards">
+            <a href="{{ url_for('items_list') }}" class="fridge-card">
+                <div class="fridge-icon">🏠</div>
                 <h2>家族の冷蔵庫</h2>
-                <p class="member-count">3人が使用中</p>
+                <p class="fridge-members">👤 3人が使用中</p>
+                <div class="fridge-arrow">→</div>
+            </a>
+            
+            <div class="fridge-card-disabled">
+                <div class="fridge-icon">➕</div>
+                <h2>新しい冷蔵庫を作成</h2>
+                <p class="fridge-note">今後実装予定</p>
             </div>
-            <a href="{{ url_for('items_list') }}" class="btn btn-primary">選択 →</a>
+        </div>
+        
+        <div class="app-footer">
+            <p>© 2026 冷蔵庫管理アプリ</p>
         </div>
     </div>
-    
-    <button class="btn btn-secondary" disabled>
-        + 新しい冷蔵庫を作成 (今後実装予定)
-    </button>
 </div>
 {% endblock %}
