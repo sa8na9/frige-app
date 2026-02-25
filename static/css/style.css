@@ -305,6 +305,15 @@ body {
     margin-top: 10px;
 }
 
+.item-memo-bottom {
+    font-size: 13px;
+    color: #555;
+    background: #f8f9fa;
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
 .memo-icon {
     margin-right: 6px;
 }
@@ -470,20 +479,20 @@ body {
 
 .fab:hover {
     transform: scale(1.1) rotate(90deg);
-    box-shadow: 6px 6px 20px rgba(95, 193, 199, 0.4);
+    box-shadow: 0 6px 20px rgba(95, 193, 199, 0.4);
 }
 
 .fab-icon {
     font-size: 32px;
     color: white;
     font-weight: 400;
-    line-height: 0.80;
+    line-height: 0;
     margin: 0;
     padding: 0;
     display: block;
     height: 32px;
     position: relative;
-    /* top: 0px; */
+    top: 2px;
 }
 
 /* =============================================
@@ -954,7 +963,7 @@ textarea {
     .fab-icon {
         font-size: 28px;
         height: 28px;
-        top: -1px;
+        top: 1px;
     }
     
     .modal {

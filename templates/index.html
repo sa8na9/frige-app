@@ -75,11 +75,6 @@
                             未設定
                         {% endif %}
                     </p>
-                    {% if item.memo %}
-                    <p class="item-memo">
-                        <span class="memo-icon">📝</span> {{ item.memo }}
-                    </p>
-                    {% endif %}
                 </div>
                 
                 <div class="quantity-selector item-details">
@@ -97,6 +92,12 @@
                         <button type="submit" class="qty-btn {% if item.quantity_level == 4 %}active level-4{% endif %}">無</button>
                     </form>
                 </div>
+                
+                {% if item.memo %}
+                <div class="item-memo-bottom">
+                    <span class="memo-icon">📝</span> {{ item.memo }}
+                </div>
+                {% endif %}
                 
                 <div class="item-actions">
                     {% if item.show_add_to_list %}
@@ -124,7 +125,7 @@
     <a href="{{ url_for('register', category=current_category) }}" class="fab">
         <span class="fab-icon">+</span>
     </a>
-+
+
 </div>
 
 <!-- カテゴリ管理モーダル -->
