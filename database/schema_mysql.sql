@@ -11,6 +11,8 @@ DROP TABLE IF EXISTS items;
 DROP TABLE IF EXISTS user_fridges;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS fridges;
+DROP TABLE IF EXISTS shopping_list;
+DROP TABLE IF EXISTS categories;
 
 -- =============================================
 -- 1. fridgesテーブル(冷蔵庫情報)
@@ -66,9 +68,6 @@ CREATE TABLE items (
 -- =============================================
 -- 5. shopping_listテーブル(買い物リスト) ※Phase2で実装
 -- =============================================
--- 買い物リストテーブル（既存のものを削除して再作成）
-DROP TABLE IF EXISTS shopping_list;
-
 CREATE TABLE shopping_list (
     id INT AUTO_INCREMENT PRIMARY KEY,
     fridge_id INT NOT NULL DEFAULT 1,
@@ -106,6 +105,9 @@ ALTER TABLE items ADD COLUMN category_id INT DEFAULT 1 AFTER fridge_id;
 
 -- 既存データをすべて「調味料」カテゴリに設定
 UPDATE items SET category_id = 1;
+
+-- shopping_listテーブルにitem_idカラムを追加（まだの場合）
+ALTER TABLE shopping_list ADD COLUMN item_id INT NULL AFTER fridge_id;
 
 -- =============================================
 -- コメント

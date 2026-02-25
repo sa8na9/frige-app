@@ -108,6 +108,12 @@ body {
     display: flex;
     gap: 10px;
     align-items: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+.category-selector .btn {
+    flex-shrink: 0;
 }
 
 .category-dropdown {
@@ -452,29 +458,32 @@ body {
     height: 64px;
     background: linear-gradient(135deg, var(--primary) 0%, #4da8ae 100%);
     border-radius: 50%;
+    box-shadow: 0 6px 20px rgba(95, 193, 199, 0.4);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    z-index: 100;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 6px 20px rgba(95, 193, 199, 0.4);
-    cursor: pointer;
-    transition: all 0.3s;
-    text-decoration: none;
-    z-index: 100;
 }
 
 .fab:hover {
     transform: scale(1.1) rotate(90deg);
-    box-shadow: 0 8px 28px rgba(95, 193, 199, 0.6);
+    box-shadow: 6px 6px 20px rgba(95, 193, 199, 0.4);
 }
 
 .fab-icon {
-    font-size: 36px;
+    font-size: 32px;
     color: white;
-    font-weight: 300;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-weight: 400;
+    line-height: 0.80;
+    margin: 0;
+    padding: 0;
+    display: block;
+    height: 32px;
+    position: relative;
+    /* top: 0px; */
 }
 
 /* =============================================
@@ -943,7 +952,9 @@ textarea {
     }
     
     .fab-icon {
-        font-size: 30px;
+        font-size: 28px;
+        height: 28px;
+        top: -1px;
     }
     
     .modal {
@@ -1007,7 +1018,7 @@ textarea {
     align-items: center;
     justify-content: center;
     padding: 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #f5f5f5;
 }
 
 .fridge-select-container {

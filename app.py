@@ -219,8 +219,11 @@ def update_quantity(item_id, new_level):
     cursor.close()
     conn.close()
     
+    # 現在のソート順を取得
+    current_sort = request.args.get('sort', 'expiry')
+    
     flash('残量を更新しました', 'success')
-    return redirect(url_for('items_list', category=category_id))
+    return redirect(url_for('items_list', category=category_id, sort=current_sort))
 
 # 調味料削除(確認ダイアログはJavaScriptで実装)
 @app.route('/delete/<int:item_id>', methods=['POST'])
@@ -245,8 +248,11 @@ def delete_item(item_id):
     cursor.close()
     conn.close()
     
+    # 現在のソート順を取得
+    current_sort = request.args.get('sort', 'expiry')
+    
     flash('調味料を削除しました', 'success')
-    return redirect(url_for('items_list', category=category_id))
+    return redirect(url_for('items_list', category=category_id, sort=current_sort))
 
 # 調味料登録画面
 @app.route('/register')
@@ -302,7 +308,10 @@ def register_post():
     conn.close()
     
     flash('調味料を登録しました', 'success')
-    return redirect(url_for('items_list', category=category_id))
+    # 現在のソート順を取得
+    current_sort = request.args.get('sort', 'expiry')
+    
+    return redirect(url_for('items_list', category=category_id, sort=current_sort))
 
 # 調味料編集画面
 @app.route('/edit/<int:item_id>')
@@ -368,8 +377,11 @@ def edit_post(item_id):
     cursor.close()
     conn.close()
     
+    # 現在のソート順を取得
+    current_sort = request.args.get('sort', 'expiry')
+    
     flash('調味料を更新しました', 'success')
-    return redirect(url_for('items_list', category=category_id))
+    return redirect(url_for('items_list', category=category_id, sort=current_sort))
 
 # 共有設定画面(ハリボテ)
 @app.route('/share_settings')
@@ -423,7 +435,10 @@ def add_to_shopping_list(item_id):
     cursor.close()
     conn.close()
     
-    return redirect(url_for('items_list', category=category_id))
+    # 現在のソート順を取得
+    current_sort = request.args.get('sort', 'expiry')
+    
+    return redirect(url_for('items_list', category=category_id, sort=current_sort))
 
 # 買い物リストのチェック状態を切り替え
 @app.route('/toggle_shopping_check/<int:shopping_id>', methods=['POST'])
