@@ -492,7 +492,7 @@ body {
     display: block;
     height: 32px;
     position: relative;
-    top: 2px;
+    top: 12px;
 }
 
 /* =============================================
@@ -1202,5 +1202,86 @@ textarea {
     
     .fridge-arrow {
         display: none;
+    }
+}
+
+/* =============================================
+   アイコン選択
+   ============================================= */
+.icon-selector {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+}
+
+.icon-option {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    border: 3px solid #e0e0e0;
+    border-radius: 12px;
+    transition: all 0.3s;
+}
+
+.icon-option:hover {
+    border-color: var(--primary);
+    background: rgba(95, 193, 199, 0.05);
+}
+
+.icon-option input[type="radio"] {
+    display: none;
+}
+
+.icon-option input[type="radio"]:checked + .icon-preview {
+    transform: scale(1.2);
+}
+
+.icon-option:has(input:checked) {
+    border-color: var(--primary);
+    background: rgba(95, 193, 199, 0.1);
+    box-shadow: 0 0 0 3px rgba(95, 193, 199, 0.2);
+}
+
+.icon-preview {
+    font-size: 32px;
+    transition: transform 0.3s;
+}
+
+.no-stores {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+    font-size: 16px;
+}
+
+.fridge-card-create {
+    background: #f8f9fa;
+    color: #333;
+    padding: 30px;
+    border-radius: 16px;
+    border: 2px dashed #ddd;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.fridge-card-create:hover {
+    border-color: var(--primary);
+    background: rgba(95, 193, 199, 0.05);
+    transform: translateY(-4px);
+}
+
+.fridge-info {
+    flex: 1;
+}
+
+@media (max-width: 600px) {
+    .icon-selector {
+        grid-template-columns: repeat(3, 1fr);
     }
 }

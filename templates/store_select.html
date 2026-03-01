@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}店舗選択 - 在庫管理システム{% endblock %}
+
+{% block content %}
+<div class="fridge-select-page">
+    <div class="fridge-select-container">
+        <div class="app-logo">
+            <div class="logo-icon">📦</div>
+            <h1>在庫管理システム</h1>
+            <p class="app-subtitle">店舗の在庫を簡単管理</p>
+        </div>
+        
+        <div class="fridge-cards">
+            {% if stores %}
+                {% for store in stores %}
+                <div class="store-card-wrapper">
+                    <a href="{{ url_for('inventory_list', store_id=store.fridge_id) }}" class="fridge-card">
+                        <div class="fridge-icon">{{ store.fridge_icon }}</div>
+                        <div class="fridge-info">
+                            <h2>{{ store.fridge_name }}</h2>
+                            <p class="fridge-members">👤 スタッフ使用中</p>
+                        </div>
+                        <div class="fridge-arrow">→</div>
+                    </a>
+                    <a href="{{ url_for('delete_store_confirm', store_id=store.fridge_id) }}" class="store-delete-btn" title="店舗を削除">
+                        🗑️
+                    </a>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-stores">店舗が登録されていません</p>
+            {% endif %}
+            
+            <a href="{{ url_for('create_store') }}" class="fridge-card-create">
+                <div class="fridge-icon">➕</div>
+                <div class="fridge-info">
+                    <h2>新しい店舗を作成</h2>
+                    <p class="fridge-note">店舗名・アイコン・パスワードを設定</p>
+                </div>
+            </a>
+        </div>
+        
+        <div class="app-footer">
+            <p>© 2026 在庫管理システム</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.store-card-wrapper {
+    position: relative;
+}
+
+.store-delete-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    background: #e74c3c;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    text-decoration: none;
+    transition: all 0.3s;
+    z-index: 10;
+}
+
+.store-delete-btn:hover {
+    background: #c0392b;
+    transform: scale(1.1);
+}
+</style>
+{% endblock %}

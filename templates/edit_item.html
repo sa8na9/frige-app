@@ -74,7 +74,7 @@
         
         <!-- ボタン -->
         <div class="form-actions">
-            <a href="{{ url_for('items_list', category=item.category_id, sort=request.args.get('sort', 'expiry')) }}" class="btn btn-secondary">キャンセル</a>
+            <a href="{{ url_for('inventory_list', store_id=store_id, category=item.category_id, sort=request.args.get('sort', 'expiry')) }}" class="btn btn-secondary">キャンセル</a>
             <button type="submit" class="btn btn-primary">更新する</button>
         </div>
     </form>

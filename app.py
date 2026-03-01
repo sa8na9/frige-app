@@ -5,11 +5,12 @@ import psycopg2.extras
 from config import get_db_config, USE_PRODUCTION
 from datetime import datetime, timedelta
 import os
+import bcrypt
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here-change-in-production'
 
-# 🔍 デバッグ情報を出力
+# デバッグ情報を出力
 print("=" * 60)
 print("🔍 デバッグ情報 - アプリ起動時")
 print("=" * 60)
@@ -19,11 +20,9 @@ print(f"PRODUCTION環境変数: {os.environ.get('PRODUCTION', '❌ 未設定')}"
 print(f"実際の接続先設定:")
 config = get_db_config()
 if isinstance(config, str):
-    # PostgreSQL接続文字列の場合はパスワード部分を隠す
     masked_config = config.replace(config.split(':')[2].split('@')[0], '***PASSWORD***')
     print(f"  PostgreSQL: {masked_config}")
 else:
-    # MySQL設定辞書の場合
     print(f"  MySQL: host={config.get('host')}, database={config.get('database')}")
 print("=" * 60)
 print()
@@ -32,36 +31,179 @@ print()
 def get_db_connection():
     config = get_db_config()
     if USE_PRODUCTION:
-        # PostgreSQL (Supabase) - 接続文字列で接続
         print("🔗 PostgreSQLに接続しています...")
         return psycopg2.connect(config)
     else:
-        # MySQL (XAMPP) - 辞書形式で接続
         print("🔗 MySQL(XAMPP)に接続しています...")
         return mysql.connector.connect(**config)
 
-# カテゴリ一覧を取得（他の関数から呼び出す用）
-def get_categories(conn):
+# カテゴリ一覧を取得
+def get_categories(conn, store_id):
     if USE_PRODUCTION:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     else:
         cursor = conn.cursor(dictionary=True)
     
-    query = "SELECT * FROM categories WHERE fridge_id = 1 ORDER BY id"
-    cursor.execute(query)
+    query = "SELECT * FROM categories WHERE fridge_id = %s ORDER BY id"
+    cursor.execute(query, (store_id,))
     categories = cursor.fetchall()
     cursor.close()
     
     return categories
 
-# 冷蔵庫選択画面(ハリボテ)
-@app.route('/')
-def fridge_select():
-    return render_template('fridge_select.html', show_back_button=False)
+# =============================================
+# 店舗管理
+# =============================================
 
-# 調味料一覧画面(メイン) - カテゴリ対応版
-@app.route('/items')
-def items_list():
+# 店舗選択画面
+@app.route('/')
+def store_select():
+    conn = get_db_connection()
+    if USE_PRODUCTION:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    else:
+        cursor = conn.cursor(dictionary=True)
+    
+    query = "SELECT * FROM fridges ORDER BY created_at"
+    cursor.execute(query)
+    stores = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('store_select.html', stores=stores, show_back_button=False)
+
+# 店舗作成画面
+@app.route('/create_store')
+def create_store():
+    return render_template('create_store.html', show_back_button=True)
+
+# 店舗作成処理
+@app.route('/create_store', methods=['POST'])
+def create_store_post():
+    store_name = request.form.get('store_name')
+    store_icon = request.form.get('store_icon', '🏪')
+    password = request.form.get('password')
+    password_confirm = request.form.get('password_confirm')
+    
+    # バリデーション
+    if not store_name or len(store_name) > 50:
+        flash('店舗名は必須です（50文字以内）', 'error')
+        return redirect(url_for('create_store'))
+    
+    if not password or len(password) != 4 or not password.isdigit():
+        flash('パスワードは4桁の数字で入力してください', 'error')
+        return redirect(url_for('create_store'))
+    
+    if password != password_confirm:
+        flash('パスワードが一致しません', 'error')
+        return redirect(url_for('create_store'))
+    
+    # パスワードをハッシュ化
+    password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # 店舗を作成
+    query = "INSERT INTO fridges (fridge_name, fridge_icon, password_hash) VALUES (%s, %s, %s)"
+    cursor.execute(query, (store_name, store_icon, password_hash))
+    conn.commit()
+    
+    # 作成した店舗のIDを取得
+    if USE_PRODUCTION:
+        cursor.execute("SELECT lastval()")
+    else:
+        cursor.execute("SELECT LAST_INSERT_ID()")
+    store_id = cursor.fetchone()[0]
+    
+    # デフォルトカテゴリを作成
+    categories = ['食材', 'パック・容器', '調味料']
+    query = "INSERT INTO categories (fridge_id, name) VALUES (%s, %s)"
+    for cat_name in categories:
+        cursor.execute(query, (store_id, cat_name))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    flash(f'店舗「{store_name}」を作成しました', 'success')
+    return redirect(url_for('store_select'))
+
+# 店舗削除画面
+@app.route('/store/<int:store_id>/delete')
+def delete_store_confirm(store_id):
+    conn = get_db_connection()
+    if USE_PRODUCTION:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    else:
+        cursor = conn.cursor(dictionary=True)
+    
+    query = "SELECT * FROM fridges WHERE fridge_id = %s"
+    cursor.execute(query, (store_id,))
+    store = cursor.fetchone()
+    
+    cursor.close()
+    conn.close()
+    
+    if not store:
+        flash('店舗が見つかりません', 'error')
+        return redirect(url_for('store_select'))
+    
+    return render_template('delete_store.html', store=store, show_back_button=True)
+
+# 店舗削除処理
+@app.route('/store/<int:store_id>/delete', methods=['POST'])
+def delete_store_post(store_id):
+    password = request.form.get('password')
+    confirm_text = request.form.get('confirm_text')
+    
+    # 確認テキストチェック
+    if confirm_text != '削除':
+        flash('確認テキストが正しくありません', 'error')
+        return redirect(url_for('delete_store_confirm', store_id=store_id))
+    
+    conn = get_db_connection()
+    if USE_PRODUCTION:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    else:
+        cursor = conn.cursor(dictionary=True)
+    
+    # 店舗情報を取得
+    query = "SELECT * FROM fridges WHERE fridge_id = %s"
+    cursor.execute(query, (store_id,))
+    store = cursor.fetchone()
+    
+    if not store:
+        flash('店舗が見つかりません', 'error')
+        conn.close()
+        return redirect(url_for('store_select'))
+    
+    # パスワード確認
+    if not bcrypt.checkpw(password.encode('utf-8'), store['password_hash'].encode('utf-8')):
+        flash('パスワードが正しくありません', 'error')
+        conn.close()
+        return redirect(url_for('delete_store_confirm', store_id=store_id))
+    
+    # 店舗を削除（CASCADE削除により関連データも削除）
+    cursor = conn.cursor()
+    query = "DELETE FROM fridges WHERE fridge_id = %s"
+    cursor.execute(query, (store_id,))
+    conn.commit()
+    
+    cursor.close()
+    conn.close()
+    
+    flash(f'店舗「{store["fridge_name"]}」を削除しました', 'success')
+    return redirect(url_for('store_select'))
+
+# =============================================
+# 在庫管理
+# =============================================
+
+# 在庫一覧画面
+@app.route('/store/<int:store_id>/inventory')
+def inventory_list(store_id):
     conn = get_db_connection()
     if USE_PRODUCTION:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -69,10 +211,12 @@ def items_list():
         cursor = conn.cursor(dictionary=True)
     
     # カテゴリ一覧を取得
-    categories = get_categories(conn)
+    categories = get_categories(conn, store_id)
     
-    # カテゴリIDを取得（デフォルトは1：調味料）
-    category_id = request.args.get('category', 1, type=int)
+    # カテゴリIDを取得
+    category_id = request.args.get('category', None, type=int)
+    if category_id is None and categories:
+        category_id = categories[0]['id']
     
     # ソートパラメータを取得
     sort_by = request.args.get('sort', 'expiry')
@@ -104,31 +248,19 @@ def items_list():
                     expiry_date
             """
     
-    # 調味料を取得（カテゴリでフィルタ）
+    # 在庫を取得
     query = f"""
-        SELECT 
-            id,
-            name,
-            container_type,
-            quantity_level,
-            opened_date,
-            expiry_date,
-            memo,
-            created_at
+        SELECT id, name, quantity_level, opened_date, expiry_date, memo, created_at
         FROM items
-        WHERE fridge_id = 1 AND category_id = %s
+        WHERE fridge_id = %s AND category_id = %s
         {order_clause}
     """
-    
-    cursor.execute(query, (category_id,))
+    cursor.execute(query, (store_id, category_id))
     items = cursor.fetchall()
     
-    # 各調味料に追加情報を付与
+    # 各在庫に追加情報を付与
     today = datetime.now().date()
     for item in items:
-        container_types = {1: '液体', 2: 'チューブ', 3: '粉末'}
-        item['container_type_text'] = container_types.get(item['container_type'], '不明')
-        
         # 賞味期限のステータス
         if item['expiry_date']:
             if item['expiry_date'] < today:
@@ -149,7 +281,7 @@ def items_list():
             item['expiry_icon'] = ''
 
         # 開封日からの経過日数
-        if item['opened_date']:
+        if item.get('opened_date'):
             days = (today - item['opened_date']).days
             item['days_since_open'] = days
             if days >= 90:
@@ -162,42 +294,39 @@ def items_list():
             item['days_since_open'] = None
             item['days_since_open_class'] = ''
         
-        # リストに追加ボタンを表示するか（期限切れ OR 残量無）
+        # 発注リストに追加ボタンを表示するか
         item['show_add_to_list'] = (
             item['quantity_level'] == 4 or 
             (item['expiry_date'] and item['expiry_date'] < today)
         )
     
-    # 買い物リストに登録済みのitem_idを取得
-    query_shopping = "SELECT item_id FROM shopping_list WHERE fridge_id = 1 AND item_id IS NOT NULL"
-    cursor.execute(query_shopping)
+    # 発注リストに登録済みのitem_idを取得
+    query_shopping = "SELECT item_id FROM shopping_list WHERE fridge_id = %s AND item_id IS NOT NULL"
+    cursor.execute(query_shopping, (store_id,))
     shopping_items = cursor.fetchall()
     shopping_item_ids = [item['item_id'] for item in shopping_items]
     
-    # デバッグ出力
-    print(f"🛒 買い物リストのitem_id: {shopping_item_ids}")
-    
-    # 各アイテムが買い物リストに登録済みかチェック
+    # 各アイテムが発注リストに登録済みかチェック
     for item in items:
         item['in_shopping_list'] = item['id'] in shopping_item_ids
-        print(f"  ID {item['id']}: {item['name']} -> in_shopping_list={item['in_shopping_list']}")
     
     cursor.close()
     conn.close()
     
-    return render_template('index.html', 
+    return render_template('inventory_list.html', 
                          items=items, 
                          categories=categories,
                          current_category=category_id,
-                         current_sort=sort_by, 
+                         current_sort=sort_by,
+                         store_id=store_id,
                          show_back_button=True)
 
 # 残量をワンタップで更新
-@app.route('/update_quantity/<int:item_id>/<int:new_level>', methods=['POST'])
-def update_quantity(item_id, new_level):
+@app.route('/store/<int:store_id>/update_quantity/<int:item_id>/<int:new_level>', methods=['POST'])
+def update_quantity(store_id, item_id, new_level):
     if new_level not in [1, 2, 3, 4]:
         flash('無効な残量レベルです', 'error')
-        return redirect(url_for('items_list'))
+        return redirect(url_for('inventory_list', store_id=store_id))
     
     conn = get_db_connection()
     if USE_PRODUCTION:
@@ -206,14 +335,14 @@ def update_quantity(item_id, new_level):
         cursor = conn.cursor(dictionary=True)
     
     # アイテムのcategory_idを取得
-    query = "SELECT category_id FROM items WHERE id = %s"
-    cursor.execute(query, (item_id,))
+    query = "SELECT category_id FROM items WHERE id = %s AND fridge_id = %s"
+    cursor.execute(query, (item_id, store_id))
     item = cursor.fetchone()
     category_id = item['category_id'] if item else 1
     
     # 残量を更新
-    query = "UPDATE items SET quantity_level = %s WHERE id = %s"
-    cursor.execute(query, (new_level, item_id))
+    query = "UPDATE items SET quantity_level = %s WHERE id = %s AND fridge_id = %s"
+    cursor.execute(query, (new_level, item_id, store_id))
     conn.commit()
     
     cursor.close()
@@ -223,11 +352,11 @@ def update_quantity(item_id, new_level):
     current_sort = request.args.get('sort', 'expiry')
     
     flash('残量を更新しました', 'success')
-    return redirect(url_for('items_list', category=category_id, sort=current_sort))
+    return redirect(url_for('inventory_list', store_id=store_id, category=category_id, sort=current_sort))
 
-# 調味料削除(確認ダイアログはJavaScriptで実装)
-@app.route('/delete/<int:item_id>', methods=['POST'])
-def delete_item(item_id):
+# 在庫削除
+@app.route('/store/<int:store_id>/delete_item/<int:item_id>', methods=['POST'])
+def delete_item(store_id, item_id):
     conn = get_db_connection()
     if USE_PRODUCTION:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -235,14 +364,15 @@ def delete_item(item_id):
         cursor = conn.cursor(dictionary=True)
     
     # アイテムのcategory_idを取得
-    query = "SELECT category_id FROM items WHERE id = %s"
-    cursor.execute(query, (item_id,))
+    query = "SELECT category_id FROM items WHERE id = %s AND fridge_id = %s"
+    cursor.execute(query, (item_id, store_id))
     item = cursor.fetchone()
     category_id = item['category_id'] if item else 1
     
     # 削除
-    query = "DELETE FROM items WHERE id = %s"
-    cursor.execute(query, (item_id,))
+    cursor = conn.cursor()
+    query = "DELETE FROM items WHERE id = %s AND fridge_id = %s"
+    cursor.execute(query, (item_id, store_id))
     conn.commit()
     
     cursor.close()
@@ -251,20 +381,22 @@ def delete_item(item_id):
     # 現在のソート順を取得
     current_sort = request.args.get('sort', 'expiry')
     
-    flash('調味料を削除しました', 'success')
-    return redirect(url_for('items_list', category=category_id, sort=current_sort))
+    flash('在庫を削除しました', 'success')
+    return redirect(url_for('inventory_list', store_id=store_id, category=category_id, sort=current_sort))
 
-# 調味料登録画面
-@app.route('/register')
-def register():
+# 在庫登録画面
+@app.route('/store/<int:store_id>/add_item')
+def add_item(store_id):
     conn = get_db_connection()
-    categories = get_categories(conn)
+    categories = get_categories(conn, store_id)
     
-    # 現在選択中のカテゴリIDを取得（デフォルトは1）
-    current_category = request.args.get('category', 1, type=int)
+    # 現在選択中のカテゴリIDを取得
+    current_category = request.args.get('category', None, type=int)
+    if current_category is None and categories:
+        current_category = categories[0]['id']
     
     # カテゴリ名を取得
-    category_name = '調味料'
+    category_name = '在庫'
     for cat in categories:
         if cat['id'] == current_category:
             category_name = cat['name']
@@ -272,18 +404,18 @@ def register():
     
     conn.close()
     
-    return render_template('register.html', 
+    return render_template('add_item.html', 
                          categories=categories, 
                          current_category=current_category,
                          category_name=category_name,
+                         store_id=store_id,
                          show_back_button=True)
 
-# 調味料登録処理
-@app.route('/register', methods=['POST'])
-def register_post():
+# 在庫登録処理
+@app.route('/store/<int:store_id>/add_item', methods=['POST'])
+def add_item_post(store_id):
     name = request.form.get('name')
     category_id = request.form.get('category_id', 1, type=int)
-    container_type = request.form.get('container_type', 1, type=int)
     quantity_level = request.form.get('quantity_level', 1, type=int)
     opened_date = request.form.get('opened_date') or None
     expiry_date = request.form.get('expiry_date') or None
@@ -291,53 +423,49 @@ def register_post():
     
     # バリデーション
     if not name or len(name) > 50:
-        flash('調味料名は必須です(50文字以内)', 'error')
-        return redirect(url_for('register'))
+        flash('商品名は必須です(50文字以内)', 'error')
+        return redirect(url_for('add_item', store_id=store_id))
     
     conn = get_db_connection()
     cursor = conn.cursor()
     
     query = """
-        INSERT INTO items (fridge_id, category_id, name, container_type, quantity_level, opened_date, expiry_date, memo)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO items (fridge_id, category_id, name, quantity_level, opened_date, expiry_date, memo)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
-    cursor.execute(query, (1, category_id, name, container_type, quantity_level, opened_date, expiry_date, memo))
+    cursor.execute(query, (store_id, category_id, name, quantity_level, opened_date, expiry_date, memo))
     conn.commit()
     
     cursor.close()
     conn.close()
     
-    flash('調味料を登録しました', 'success')
-    # 現在のソート順を取得
-    current_sort = request.args.get('sort', 'expiry')
-    
-    return redirect(url_for('items_list', category=category_id, sort=current_sort))
+    flash('在庫を登録しました', 'success')
+    return redirect(url_for('inventory_list', store_id=store_id, category=category_id))
 
-# 調味料編集画面
-@app.route('/edit/<int:item_id>')
-def edit(item_id):
+# 在庫編集画面
+@app.route('/store/<int:store_id>/edit_item/<int:item_id>')
+def edit_item(store_id, item_id):
     conn = get_db_connection()
     if USE_PRODUCTION:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     else:
         cursor = conn.cursor(dictionary=True)
     
-    query = "SELECT * FROM items WHERE id = %s"
-    cursor.execute(query, (item_id,))
+    query = "SELECT * FROM items WHERE id = %s AND fridge_id = %s"
+    cursor.execute(query, (item_id, store_id))
     item = cursor.fetchone()
     
     cursor.close()
     
     if not item:
         conn.close()
-        flash('調味料が見つかりません', 'error')
-        return redirect(url_for('items_list'))
+        flash('在庫が見つかりません', 'error')
+        return redirect(url_for('inventory_list', store_id=store_id))
     
-    # connを閉じる前にカテゴリを取得
-    categories = get_categories(conn)
+    categories = get_categories(conn, store_id)
     
     # カテゴリ名を取得
-    category_name = '調味料'
+    category_name = '在庫'
     for cat in categories:
         if cat['id'] == item['category_id']:
             category_name = cat['name']
@@ -345,14 +473,18 @@ def edit(item_id):
     
     conn.close()
     
-    return render_template('edit.html', item=item, categories=categories, category_name=category_name, show_back_button=True)
+    return render_template('edit_item.html', 
+                         item=item, 
+                         categories=categories, 
+                         category_name=category_name, 
+                         store_id=store_id,
+                         show_back_button=True)
 
-# 調味料更新処理
-@app.route('/edit/<int:item_id>', methods=['POST'])
-def edit_post(item_id):
+# 在庫更新処理
+@app.route('/store/<int:store_id>/edit_item/<int:item_id>', methods=['POST'])
+def edit_item_post(store_id, item_id):
     name = request.form.get('name')
     category_id = request.form.get('category_id', type=int)
-    container_type = request.form.get('container_type', type=int)
     quantity_level = request.form.get('quantity_level', type=int)
     opened_date = request.form.get('opened_date') or None
     expiry_date = request.form.get('expiry_date') or None
@@ -360,18 +492,18 @@ def edit_post(item_id):
     
     # バリデーション
     if not name or len(name) > 50:
-        flash('調味料名は必須です(50文字以内)', 'error')
-        return redirect(url_for('edit', item_id=item_id))
+        flash('商品名は必須です(50文字以内)', 'error')
+        return redirect(url_for('edit_item', store_id=store_id, item_id=item_id))
     
     conn = get_db_connection()
     cursor = conn.cursor()
     
     query = """
         UPDATE items 
-        SET category_id = %s, name = %s, container_type = %s, quantity_level = %s, opened_date = %s, expiry_date = %s, memo = %s
-        WHERE id = %s
+        SET category_id = %s, name = %s, quantity_level = %s, opened_date = %s, expiry_date = %s, memo = %s
+        WHERE id = %s AND fridge_id = %s
     """
-    cursor.execute(query, (category_id, name, container_type, quantity_level, opened_date, expiry_date, memo, item_id))
+    cursor.execute(query, (category_id, name, quantity_level, opened_date, expiry_date, memo, item_id, store_id))
     conn.commit()
     
     cursor.close()
@@ -380,54 +512,52 @@ def edit_post(item_id):
     # 現在のソート順を取得
     current_sort = request.args.get('sort', 'expiry')
     
-    flash('調味料を更新しました', 'success')
-    return redirect(url_for('items_list', category=category_id, sort=current_sort))
+    flash('在庫を更新しました', 'success')
+    return redirect(url_for('inventory_list', store_id=store_id, category=category_id, sort=current_sort))
 
-# 共有設定画面(ハリボテ)
-@app.route('/share_settings')
-def share_settings():
-    return render_template('share_settings.html', show_back_button=True)
+# =============================================
+# 発注リスト機能
+# =============================================
 
-# ==================== 買い物リスト機能 ====================
-
-# 買い物リスト画面
-@app.route('/shopping_list')
-def shopping_list():
+# 発注リスト画面
+@app.route('/store/<int:store_id>/orders')
+def order_list(store_id):
     conn = get_db_connection()
     if USE_PRODUCTION:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     else:
         cursor = conn.cursor(dictionary=True)
     
-    query = "SELECT * FROM shopping_list WHERE fridge_id = 1 ORDER BY created_at"
-    cursor.execute(query)
+    query = "SELECT * FROM shopping_list WHERE fridge_id = %s ORDER BY created_at"
+    cursor.execute(query, (store_id,))
     items = cursor.fetchall()
     
     cursor.close()
     conn.close()
     
-    return render_template('shopping_list.html', items=items, show_back_button=True)
+    return render_template('order_list.html', items=items, store_id=store_id, show_back_button=True)
 
-# 買い物リストに追加
-@app.route('/add_to_shopping_list/<int:item_id>', methods=['POST'])
-def add_to_shopping_list(item_id):
+# 発注リストに追加
+@app.route('/store/<int:store_id>/add_to_order/<int:item_id>', methods=['POST'])
+def add_to_order(store_id, item_id):
     conn = get_db_connection()
     if USE_PRODUCTION:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     else:
         cursor = conn.cursor(dictionary=True)
     
-    # 調味料情報を取得
-    query = "SELECT name, memo, category_id FROM items WHERE id = %s"
-    cursor.execute(query, (item_id,))
+    # 在庫情報を取得
+    query = "SELECT name, memo, category_id FROM items WHERE id = %s AND fridge_id = %s"
+    cursor.execute(query, (item_id, store_id))
     item = cursor.fetchone()
     
     if item:
-        # 買い物リストに追加（item_idも保存）
+        # 発注リストに追加
+        cursor = conn.cursor()
         query = "INSERT INTO shopping_list (fridge_id, item_id, item_name, memo) VALUES (%s, %s, %s, %s)"
-        cursor.execute(query, (1, item_id, item['name'], item['memo']))
+        cursor.execute(query, (store_id, item_id, item['name'], item['memo']))
         conn.commit()
-        flash(f'{item["name"]}を買い物リストに追加しました', 'success')
+        flash(f'{item["name"]}を発注リストに追加しました', 'success')
         category_id = item['category_id']
     else:
         category_id = 1
@@ -438,50 +568,98 @@ def add_to_shopping_list(item_id):
     # 現在のソート順を取得
     current_sort = request.args.get('sort', 'expiry')
     
-    return redirect(url_for('items_list', category=category_id, sort=current_sort))
+    return redirect(url_for('inventory_list', store_id=store_id, category=category_id, sort=current_sort))
 
-# 買い物リストのチェック状態を切り替え
-@app.route('/toggle_shopping_check/<int:shopping_id>', methods=['POST'])
-def toggle_shopping_check(shopping_id):
+# 発注リスト手動登録画面
+@app.route('/store/<int:store_id>/add_order')
+def add_order_manual(store_id):
+    return render_template('add_order_manual.html', store_id=store_id, show_back_button=True)
+
+# 発注リスト手動登録処理
+@app.route('/store/<int:store_id>/add_order', methods=['POST'])
+def add_order_manual_post(store_id):
+    item_name = request.form.get('item_name')
+    memo = request.form.get('memo') or None
+    
+    # バリデーション
+    if not item_name or len(item_name) > 50:
+        flash('商品名は必須です(50文字以内)', 'error')
+        return redirect(url_for('add_order_manual', store_id=store_id))
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    query = "UPDATE shopping_list SET is_checked = NOT is_checked WHERE id = %s"
-    cursor.execute(query, (shopping_id,))
+    query = "INSERT INTO shopping_list (fridge_id, item_name, memo) VALUES (%s, %s, %s)"
+    cursor.execute(query, (store_id, item_name, memo))
     conn.commit()
     
     cursor.close()
     conn.close()
     
-    return redirect(url_for('shopping_list'))
+    flash(f'{item_name}を発注リストに追加しました', 'success')
+    return redirect(url_for('order_list', store_id=store_id))
 
-# 買い物リストから新規登録画面へ
-@app.route('/purchase_from_list/<int:shopping_id>')
-def purchase_from_list(shopping_id):
+# 発注リストのチェック状態を切り替え
+@app.route('/store/<int:store_id>/toggle_order_check/<int:order_id>', methods=['POST'])
+def toggle_order_check(store_id, order_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    query = "UPDATE shopping_list SET is_checked = NOT is_checked WHERE id = %s AND fridge_id = %s"
+    cursor.execute(query, (order_id, store_id))
+    conn.commit()
+    
+    cursor.close()
+    conn.close()
+    
+    return redirect(url_for('order_list', store_id=store_id))
+
+# 発注完了（チェック済みアイテム削除）
+@app.route('/store/<int:store_id>/finish_order', methods=['POST'])
+def finish_order(store_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    query = "DELETE FROM shopping_list WHERE fridge_id = %s AND is_checked = TRUE"
+    cursor.execute(query, (store_id,))
+    deleted_count = cursor.rowcount
+    conn.commit()
+    
+    cursor.close()
+    conn.close()
+    
+    flash(f'チェック済みの{deleted_count}件を削除しました', 'success')
+    return redirect(url_for('order_list', store_id=store_id))
+
+# 発注品入荷画面
+@app.route('/store/<int:store_id>/receive_from_order/<int:order_id>')
+def receive_from_order(store_id, order_id):
     conn = get_db_connection()
     if USE_PRODUCTION:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     else:
         cursor = conn.cursor(dictionary=True)
     
-    query = "SELECT * FROM shopping_list WHERE id = %s"
-    cursor.execute(query, (shopping_id,))
-    shopping_item = cursor.fetchone()
+    query = "SELECT * FROM shopping_list WHERE id = %s AND fridge_id = %s"
+    cursor.execute(query, (order_id, store_id))
+    order_item = cursor.fetchone()
     
     cursor.close()
     conn.close()
     
-    if not shopping_item:
-        flash('買い物リストに見つかりません', 'error')
-        return redirect(url_for('shopping_list'))
+    if not order_item:
+        flash('発注リストに見つかりません', 'error')
+        return redirect(url_for('order_list', store_id=store_id))
     
-    return render_template('purchase_from_list.html', shopping_item=shopping_item, show_back_button=True)
+    return render_template('receive_from_order.html', 
+                         order_item=order_item, 
+                         store_id=store_id,
+                         show_back_button=True)
 
-# 買い物リストから登録処理
-@app.route('/purchase_from_list/<int:shopping_id>', methods=['POST'])
-def purchase_from_list_post(shopping_id):
+# 発注品入荷登録処理
+@app.route('/store/<int:store_id>/receive_from_order/<int:order_id>', methods=['POST'])
+def receive_from_order_post(store_id, order_id):
     name = request.form.get('name')
-    container_type = request.form.get('container_type', type=int)
     quantity_level = request.form.get('quantity_level', type=int)
     opened_date = request.form.get('opened_date') or None
     expiry_date = request.form.get('expiry_date') or None
@@ -489,55 +667,59 @@ def purchase_from_list_post(shopping_id):
     
     # バリデーション
     if not name or len(name) > 50:
-        flash('調味料名は必須です(50文字以内)', 'error')
-        return redirect(url_for('purchase_from_list', shopping_id=shopping_id))
+        flash('商品名は必須です(50文字以内)', 'error')
+        return redirect(url_for('receive_from_order', store_id=store_id, order_id=order_id))
     
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # 調味料を登録
+    # 在庫を登録
     query = """
-        INSERT INTO items (fridge_id, name, container_type, quantity_level, opened_date, expiry_date, memo)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO items (fridge_id, name, quantity_level, opened_date, expiry_date, memo)
+        VALUES (%s, %s, %s, %s, %s, %s)
     """
-    cursor.execute(query, (1, name, container_type, quantity_level, opened_date, expiry_date, memo))
+    cursor.execute(query, (store_id, name, quantity_level, opened_date, expiry_date, memo))
     
-    # 買い物リストから削除
-    query = "DELETE FROM shopping_list WHERE id = %s"
-    cursor.execute(query, (shopping_id,))
+    # 発注リストから削除
+    query = "DELETE FROM shopping_list WHERE id = %s AND fridge_id = %s"
+    cursor.execute(query, (order_id, store_id))
     
     conn.commit()
     cursor.close()
     conn.close()
     
-    flash('調味料を登録しました', 'success')
-    return redirect(url_for('shopping_list'))
+    flash('在庫を登録しました', 'success')
+    return redirect(url_for('order_list', store_id=store_id))
+
+# =============================================
+# カテゴリ管理
+# =============================================
 
 # カテゴリ新規作成API
-@app.route('/add_category', methods=['POST'])
-def add_category():
+@app.route('/store/<int:store_id>/add_category', methods=['POST'])
+def add_category(store_id):
     name = request.form.get('name')
     
     if not name or len(name) > 50:
         flash('カテゴリ名は必須です（50文字以内）', 'error')
-        return redirect(url_for('items_list'))
+        return redirect(url_for('inventory_list', store_id=store_id))
     
     conn = get_db_connection()
     cursor = conn.cursor()
     
     query = "INSERT INTO categories (fridge_id, name) VALUES (%s, %s)"
-    cursor.execute(query, (1, name))
+    cursor.execute(query, (store_id, name))
     conn.commit()
     
     cursor.close()
     conn.close()
     
     flash(f'カテゴリ「{name}」を作成しました', 'success')
-    return redirect(url_for('items_list'))
+    return redirect(url_for('inventory_list', store_id=store_id))
 
 # カテゴリ削除API
-@app.route('/delete_category', methods=['POST'])
-def delete_category():
+@app.route('/store/<int:store_id>/delete_category', methods=['POST'])
+def delete_category(store_id):
     category_id = request.form.get('category_id', type=int)
     
     conn = get_db_connection()
@@ -546,89 +728,53 @@ def delete_category():
     else:
         cursor = conn.cursor(dictionary=True)
     
-    # カテゴリ名を取得（削除メッセージ用）
-    query = "SELECT name FROM categories WHERE id = %s"
-    cursor.execute(query, (category_id,))
+    # カテゴリ名を取得
+    query = "SELECT name FROM categories WHERE id = %s AND fridge_id = %s"
+    cursor.execute(query, (category_id, store_id))
     category = cursor.fetchone()
     
     if not category:
         flash('カテゴリが見つかりません', 'error')
         conn.close()
-        return redirect(url_for('items_list'))
+        return redirect(url_for('inventory_list', store_id=store_id))
     
     category_name = category['name']
     
-    # カテゴリ数をチェック（最後の1つは削除不可）
-    query = "SELECT COUNT(*) as count FROM categories WHERE fridge_id = 1"
-    cursor.execute(query)
+    # カテゴリ数をチェック
+    query = "SELECT COUNT(*) as count FROM categories WHERE fridge_id = %s"
+    cursor.execute(query, (store_id,))
     result = cursor.fetchone()
     
     if result['count'] <= 1:
         flash('最後のカテゴリは削除できません', 'error')
         conn.close()
-        return redirect(url_for('items_list'))
+        return redirect(url_for('inventory_list', store_id=store_id))
     
     # このカテゴリのアイテムを全て削除
-    query = "DELETE FROM items WHERE category_id = %s"
-    cursor.execute(query, (category_id,))
+    cursor = conn.cursor()
+    query = "DELETE FROM items WHERE category_id = %s AND fridge_id = %s"
+    cursor.execute(query, (category_id, store_id))
     deleted_items = cursor.rowcount
     
     # カテゴリを削除
-    query = "DELETE FROM categories WHERE id = %s"
-    cursor.execute(query, (category_id,))
+    query = "DELETE FROM categories WHERE id = %s AND fridge_id = %s"
+    cursor.execute(query, (category_id, store_id))
     conn.commit()
     
     cursor.close()
     conn.close()
     
     flash(f'カテゴリ「{category_name}」と{deleted_items}件のアイテムを削除しました', 'success')
-    return redirect(url_for('items_list'))
+    return redirect(url_for('inventory_list', store_id=store_id))
 
-# 買い物リスト手動登録画面
-@app.route('/add_shopping_manual')
-def add_shopping_manual():
-    return render_template('add_shopping_manual.html', show_back_button=True)
+# =============================================
+# その他
+# =============================================
 
-# 買い物リスト手動登録処理
-@app.route('/add_shopping_manual', methods=['POST'])
-def add_shopping_manual_post():
-    item_name = request.form.get('item_name')
-    memo = request.form.get('memo') or None
-    
-    # バリデーション
-    if not item_name or len(item_name) > 50:
-        flash('アイテム名は必須です(50文字以内)', 'error')
-        return redirect(url_for('add_shopping_manual'))
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    query = "INSERT INTO shopping_list (fridge_id, item_name, memo) VALUES (%s, %s, %s)"
-    cursor.execute(query, (1, item_name, memo))
-    conn.commit()
-    
-    cursor.close()
-    conn.close()
-    
-    flash(f'{item_name}を買い物リストに追加しました', 'success')
-    return redirect(url_for('shopping_list'))
-
-# 買い物終了（チェック済みアイテム削除）
-@app.route('/finish_shopping', methods=['POST'])
-def finish_shopping():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    query = "DELETE FROM shopping_list WHERE fridge_id = 1 AND is_checked = TRUE"
-    cursor.execute(query)
-    deleted_count = cursor.rowcount
-    conn.commit()
-    
-    cursor.close()
-    conn.close()
-    
-    flash(f'チェック済みの{deleted_count}件を削除しました', 'success')
-    return redirect(url_for('shopping_list'))
+# 店舗設定画面(ハリボテ)
+@app.route('/store/<int:store_id>/settings')
+def store_settings(store_id):
+    return render_template('store_settings.html', store_id=store_id, show_back_button=True)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

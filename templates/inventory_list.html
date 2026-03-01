@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}{{ categories[current_category - 1].name if categories else '調味料' }}一覧 - 冷蔵庫管理アプリ{% endblock %}
+{% block title %}{% for cat in categories %}{% if cat.id == current_category %}{{ cat.name }}{% endif %}{% endfor %}一覧 - 在庫管理システム{% endblock %}
 
 {% block content %}
 <div class="items-page">
     <header class="page-header">
         <div class="header-left">
-            <a href="{{ url_for('fridge_select') }}" class="btn btn-secondary btn-small">← 冷蔵庫選択</a>
-            <h1>冷蔵庫管理アプリ</h1>
+            <a href="{{ url_for('store_select') }}" class="btn btn-secondary btn-small">← 店舗選択</a>
+            <h1>在庫管理システム</h1>
         </div>
         <div style="display: flex; gap: 10px;">
-            <a href="{{ url_for('shopping_list') }}" class="btn btn-icon">🛒 買い物リスト</a>
-            <a href="{{ url_for('share_settings') }}" class="btn btn-icon">⚙️ 共有設定</a>
+            <a href="{{ url_for('order_list', store_id=store_id) }}" class="btn btn-icon">📋 発注リスト</a>
+            <a href="{{ url_for('store_settings', store_id=store_id) }}" class="btn btn-icon">⚙️ 共有設定</a>
         </div>
     </header>
     
@@ -32,11 +32,11 @@
         <div class="toolbar-right">
             <div class="toggle-buttons">
                 <button class="toggle-btn {% if current_sort == 'expiry' %}active{% endif %}" 
-                        onclick="window.location.href='{{ url_for('items_list', category=current_category, sort='expiry') }}'">
+                        onclick="window.location.href='{{ url_for('inventory_list', store_id=store_id, category=current_category, sort='expiry') }}'">
                     期限順
                 </button>
                 <button class="toggle-btn {% if current_sort == 'quantity' %}active{% endif %}"
-                        onclick="window.location.href='{{ url_for('items_list', category=current_category, sort='quantity') }}'">
+                        onclick="window.location.href='{{ url_for('inventory_list', store_id=store_id, category=current_category, sort='quantity') }}'">
                     残量順
                 </button>
             </div>
@@ -79,16 +79,16 @@
                 
                 <div class="quantity-selector item-details">
                     <span>残量:</span>
-                    <form method="POST" action="{{ url_for('update_quantity', item_id=item.id, new_level=1) }}?sort={{ current_sort }}" style="display: inline;">
+                    <form method="POST" action="{{ url_for('update_quantity', store_id=store_id, item_id=item.id, new_level=1) }}?sort={{ current_sort }}" style="display: inline;">
                         <button type="submit" class="qty-btn {% if item.quantity_level == 1 %}active level-1{% endif %}">満</button>
                     </form>
-                    <form method="POST" action="{{ url_for('update_quantity', item_id=item.id, new_level=2) }}?sort={{ current_sort }}" style="display: inline;">
+                    <form method="POST" action="{{ url_for('update_quantity', store_id=store_id, item_id=item.id, new_level=2) }}?sort={{ current_sort }}" style="display: inline;">
                         <button type="submit" class="qty-btn {% if item.quantity_level == 2 %}active level-2{% endif %}">半</button>
                     </form>
-                    <form method="POST" action="{{ url_for('update_quantity', item_id=item.id, new_level=3) }}?sort={{ current_sort }}" style="display: inline;">
+                    <form method="POST" action="{{ url_for('update_quantity', store_id=store_id, item_id=item.id, new_level=3) }}?sort={{ current_sort }}" style="display: inline;">
                         <button type="submit" class="qty-btn {% if item.quantity_level == 3 %}active level-3{% endif %}">少</button>
                     </form>
-                    <form method="POST" action="{{ url_for('update_quantity', item_id=item.id, new_level=4) }}?sort={{ current_sort }}" style="display: inline;">
+                    <form method="POST" action="{{ url_for('update_quantity', store_id=store_id, item_id=item.id, new_level=4) }}?sort={{ current_sort }}" style="display: inline;">
                         <button type="submit" class="qty-btn {% if item.quantity_level == 4 %}active level-4{% endif %}">無</button>
                     </form>
                 </div>
@@ -104,13 +104,13 @@
                         {% if item.in_shopping_list %}
                         <button class="btn btn-small btn-list-added" disabled>✓ リストに追加済み</button>
                         {% else %}
-                        <form method="POST" action="{{ url_for('add_to_shopping_list', item_id=item.id) }}?sort={{ current_sort }}" style="display: inline;" onsubmit="return confirm('買い物リストに追加しますか？');">
+                        <form method="POST" action="{{ url_for('add_to_order', store_id=store_id, item_id=item.id) }}?sort={{ current_sort }}" style="display: inline;" onsubmit="return confirm('買い物リストに追加しますか？');">
                             <button type="submit" class="btn btn-small btn-list">🛒 リストに追加</button>
                         </form>
                         {% endif %}
                     {% endif %}
-                    <a href="{{ url_for('edit', item_id=item.id) }}?sort={{ current_sort }}" class="btn btn-small">編集</a>
-                    <form method="POST" action="{{ url_for('delete_item', item_id=item.id) }}?sort={{ current_sort }}" style="display: inline;" onsubmit="return confirm('本当に削除しますか?');">
+                    <a href="{{ url_for('edit_item', store_id=store_id, item_id=item.id) }}?sort={{ current_sort }}" class="btn btn-small">編集</a>
+                    <form method="POST" action="{{ url_for('delete_item', store_id=store_id, item_id=item.id) }}?sort={{ current_sort }}" style="display: inline;" onsubmit="return confirm('本当に削除しますか?');">
                         <button type="submit" class="btn btn-small btn-danger">削除</button>
                     </form>
                 </div>
@@ -122,7 +122,7 @@
     </div>
 
     <!-- 新規登録フローティングボタン -->
-    <a href="{{ url_for('register', category=current_category) }}" class="fab">
+    <a href="{{ url_for('add_item', store_id=store_id, category=current_category) }}" class="fab">
         <span class="fab-icon">+</span>
     </a>
 
@@ -141,7 +141,7 @@
                 <div class="category-item">
                     <span class="category-name">{{ category.name }}</span>
                     {% if categories|length > 1 %}
-                    <form method="POST" action="{{ url_for('delete_category') }}" style="display: inline;" onsubmit="return confirm('「{{ category.name }}」カテゴリを削除しますか？\n\n※このカテゴリに登録されているアイテムも全て削除されます。');">
+                    <form method="POST" action="{{ url_for('delete_category', store_id=store_id) }}" style="display: inline;" onsubmit="return confirm('「{{ category.name }}」カテゴリを削除しますか？\n\n※このカテゴリに登録されているアイテムも全て削除されます。');">
                         <input type="hidden" name="category_id" value="{{ category.id }}">
                         <button type="submit" class="btn-category-delete">削除</button>
                     </form>
@@ -158,7 +158,7 @@
         <!-- 新規追加フォーム -->
         <div class="category-add-section">
             <h3>新しいカテゴリを追加</h3>
-            <form method="POST" action="{{ url_for('add_category') }}">
+            <form method="POST" action="{{ url_for('add_category', store_id=store_id) }}">
                 <div class="form-group">
                     <label for="categoryName">カテゴリ名</label>
                     <input type="text" id="categoryName" name="name" required maxlength="50" placeholder="例: 飲料、お菓子">
@@ -179,7 +179,7 @@
 <script>
 // カテゴリ変更
 function changeCategory(categoryId) {
-    window.location.href = '{{ url_for("items_list") }}?category=' + categoryId + '&sort={{ current_sort }}';
+    window.location.href = '{{ url_for("inventory_list", store_id=store_id) }}?category=' + categoryId + '&sort={{ current_sort }}';
 }
 
 // カテゴリモーダル表示

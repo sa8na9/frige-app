@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}店舗設定 - 在庫管理システム{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <h1>⚙️ 店舗設定</h1>
+    
+    <div style="text-align: center; padding: 60px 20px; color: #999;">
+        <p style="font-size: 18px; margin-bottom: 20px;">🚧 準備中</p>
+        <p>この機能は今後実装予定です</p>
+        <p style="margin-top: 30px;">
+            <a href="{{ url_for('inventory_list', store_id=store_id) }}" class="btn btn-primary">在庫一覧に戻る</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
