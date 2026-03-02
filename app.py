@@ -4,10 +4,9 @@ import psycopg2
 import psycopg2.extras
 from config import get_db_config, USE_PRODUCTION
 from datetime import datetime, timedelta
+import pytz
 import os
 import bcrypt
-from datetime import datetime, timedelta
-import pytz  # 追加
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here-change-in-production'
@@ -39,7 +38,8 @@ def get_db_connection():
         print("🔗 MySQL(XAMPP)に接続しています...")
         return mysql.connector.connect(**config)
 
-# 日本時間取得関数
+
+# 日本時間（JST）の現在日付を取得
 def get_japan_time():
     """日本時間（JST）の現在日付を取得"""
     jst = pytz.timezone('Asia/Tokyo')
@@ -698,15 +698,21 @@ def receive_from_order(store_id, order_id):
     cursor.execute(query, (order_id, store_id))
     order_item = cursor.fetchone()
     
-    cursor.close()
-    conn.close()
-    
     if not order_item:
+        cursor.close()
+        conn.close()
         flash('発注リストに見つかりません', 'error')
         return redirect(url_for('order_list', store_id=store_id))
     
+    # カテゴリ一覧を取得
+    categories = get_categories(conn, store_id)
+    
+    cursor.close()
+    conn.close()
+    
     return render_template('receive_from_order.html', 
                          order_item=order_item, 
+                         categories=categories,
                          store_id=store_id,
                          show_back_button=True)
 
@@ -714,6 +720,7 @@ def receive_from_order(store_id, order_id):
 @app.route('/store/<int:store_id>/receive_from_order/<int:order_id>', methods=['POST'])
 def receive_from_order_post(store_id, order_id):
     name = request.form.get('name')
+    category_id = request.form.get('category_id', type=int)
     quantity_level = request.form.get('quantity_level', type=int)
     opened_date = request.form.get('opened_date') or None
     expiry_date = request.form.get('expiry_date') or None
@@ -724,15 +731,30 @@ def receive_from_order_post(store_id, order_id):
         flash('商品名は必須です(50文字以内)', 'error')
         return redirect(url_for('receive_from_order', store_id=store_id, order_id=order_id))
     
+    # category_idが指定されていない場合、この店舗の最初のカテゴリを取得
+    if not category_id:
+        conn = get_db_connection()
+        if USE_PRODUCTION:
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        else:
+            cursor = conn.cursor(dictionary=True)
+        
+        query = "SELECT id FROM categories WHERE fridge_id = %s ORDER BY id LIMIT 1"
+        cursor.execute(query, (store_id,))
+        result = cursor.fetchone()
+        category_id = result['id'] if result else 1
+        cursor.close()
+        conn.close()
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # 在庫を登録
+    # 在庫を登録（category_idを含める）
     query = """
-        INSERT INTO items (fridge_id, name, container_type, quantity_level, opened_date, expiry_date, memo)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO items (fridge_id, category_id, name, container_type, quantity_level, opened_date, expiry_date, memo)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
-    cursor.execute(query, (store_id, name, 1, quantity_level, opened_date, expiry_date, memo))
+    cursor.execute(query, (store_id, category_id, name, 1, quantity_level, opened_date, expiry_date, memo))
     
     # 発注リストから削除
     query = "DELETE FROM shopping_list WHERE id = %s AND fridge_id = %s"
