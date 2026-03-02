@@ -430,10 +430,10 @@ def add_item_post(store_id):
     cursor = conn.cursor()
     
     query = """
-        INSERT INTO items (fridge_id, category_id, name, quantity_level, opened_date, expiry_date, memo)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO items (fridge_id, category_id, name, container_type, quantity_level, opened_date, expiry_date, memo)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
-    cursor.execute(query, (store_id, category_id, name, quantity_level, opened_date, expiry_date, memo))
+    cursor.execute(query, (store_id, category_id, name, 1, quantity_level, opened_date, expiry_date, memo))
     conn.commit()
     
     cursor.close()
@@ -500,10 +500,10 @@ def edit_item_post(store_id, item_id):
     
     query = """
         UPDATE items 
-        SET category_id = %s, name = %s, quantity_level = %s, opened_date = %s, expiry_date = %s, memo = %s
+        SET category_id = %s, name = %s, container_type = %s, quantity_level = %s, opened_date = %s, expiry_date = %s, memo = %s
         WHERE id = %s AND fridge_id = %s
     """
-    cursor.execute(query, (category_id, name, quantity_level, opened_date, expiry_date, memo, item_id, store_id))
+    cursor.execute(query, (category_id, name, 1, quantity_level, opened_date, expiry_date, memo, item_id, store_id))
     conn.commit()
     
     cursor.close()
@@ -675,10 +675,10 @@ def receive_from_order_post(store_id, order_id):
     
     # 在庫を登録
     query = """
-        INSERT INTO items (fridge_id, name, quantity_level, opened_date, expiry_date, memo)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        INSERT INTO items (fridge_id, name, container_type, quantity_level, opened_date, expiry_date, memo)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
-    cursor.execute(query, (store_id, name, quantity_level, opened_date, expiry_date, memo))
+    cursor.execute(query, (store_id, name, 1, quantity_level, opened_date, expiry_date, memo))
     
     # 発注リストから削除
     query = "DELETE FROM shopping_list WHERE id = %s AND fridge_id = %s"
