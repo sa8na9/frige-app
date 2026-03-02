@@ -6,6 +6,8 @@ from config import get_db_config, USE_PRODUCTION
 from datetime import datetime, timedelta
 import os
 import bcrypt
+from datetime import datetime, timedelta
+import pytz  # 追加
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here-change-in-production'
@@ -36,6 +38,12 @@ def get_db_connection():
     else:
         print("🔗 MySQL(XAMPP)に接続しています...")
         return mysql.connector.connect(**config)
+
+# 日本時間取得関数
+def get_japan_time():
+    """日本時間（JST）の現在日付を取得"""
+    jst = pytz.timezone('Asia/Tokyo')
+    return datetime.now(jst).date()
 
 # カテゴリ一覧を取得
 def get_categories(conn, store_id):
@@ -305,7 +313,7 @@ def inventory_list(store_id):
     items = cursor.fetchall()
     
     # 各在庫に追加情報を付与
-    today = datetime.now().date()
+    today = get_japan_time()
     for item in items:
         # 賞味期限のステータス
         if item['expiry_date']:
