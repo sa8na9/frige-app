@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}店舗設定 - 在庫管理システム{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <h1>⚙️ 店舗設定</h1>
+    
+    <div class="store-info-box">
+        <div class="store-icon-large">{{ store.fridge_icon }}</div>
+        <h2>{{ store.fridge_name }}</h2>
+    </div>
+    
+    <!-- 店舗名変更 -->
+    <section class="settings-section">
+        <h3>🏪 店舗名・アイコン変更</h3>
+        <form method="POST" action="{{ url_for('update_store_info', store_id=store.fridge_id) }}">
+            <div class="form-group">
+                <label for="store_name">店舗名</label>
+                <input type="text" id="store_name" name="store_name" value="{{ store.fridge_name }}" required maxlength="50">
+            </div>
+            
+            <div class="form-group">
+                <label>アイコン選択</label>
+                <div class="icon-selector">
+                    {% set icons = ['🏪', '🏬', '🏢', '🏭', '🏛️', '🏠', '🍕', '🍔', '☕', '🍰'] %}
+                    {% for icon in icons %}
+                    <label class="icon-option">
+                        <input type="radio" name="store_icon" value="{{ icon }}" {% if icon == store.fridge_icon %}checked{% endif %}>
+                        <span class="icon-preview">{{ icon }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">変更を保存</button>
+        </form>
+    </section>
+    
+    <hr class="settings-divider">
+    
+    <!-- メンバー招待（ハリボテ） -->
+    <section class="settings-section">
+        <h3>👥 メンバー招待</h3>
+        <p class="section-description">他のスタッフを招待して、在庫を共同管理できます。</p>
+        
+        <div class="invite-placeholder">
+            <p style="text-align: center; color: #999; padding: 30px 0;">
+                🚧 この機能は今後実装予定です
+            </p>
+        </div>
+        
+        <!-- 将来の実装イメージ -->
+        <div class="member-list" style="opacity: 0.5; pointer-events: none;">
+            <div class="member-item">
+                <div class="member-info">
+                    <span class="member-icon">👤</span>
+                    <span class="member-name">あなた（店長）</span>
+                </div>
+                <span class="member-role">管理者</span>
+            </div>
+        </div>
+    </section>
+    
+    <hr class="settings-divider">
+    
+    <!-- 店舗削除 -->
+    <section class="settings-section danger-section">
+        <h3>🗑️ 店舗を削除</h3>
+        <p class="section-description warning-text">
+            ⚠️ この操作は取り消せません。すべての在庫データ、カテゴリ、発注リストが完全に削除されます。
+        </p>
+        
+        <button type="button" class="btn btn-danger" onclick="showDeleteConfirm()">
+            店舗を削除する
+        </button>
+    </section>
+    
+    <div class="form-actions" style="margin-top: 40px;">
+        <a href="{{ url_for('store_select') }}" class="btn btn-secondary">戻る</a>
+    </div>
+</div>
+
+<!-- 削除確認モーダル -->
+<div class="modal-backdrop" id="deleteBackdrop"></div>
+<div class="modal" id="deleteModal">
+    <h2>店舗を削除しますか？</h2>
+    
+    <div class="warning-box">
+        <p><strong>{{ store.fridge_name }}</strong> を削除します。</p>
+        <ul style="margin: 15px 0; padding-left: 20px; text-align: left;">
+            <li>すべての在庫データ</li>
+            <li>すべてのカテゴリ</li>
+            <li>発注リスト</li>
+        </ul>
+        <p style="color: #e74c3c; font-weight: bold;">この操作は取り消せません！</p>
+    </div>
+    
+    <form method="POST" action="{{ url_for('delete_store_post', store_id=store.fridge_id) }}">
+        <div class="form-group">
+            <label for="password">管理パスワード（4桁）</label>
+            <input type="password" id="password" name="password" required pattern="[0-9]{4}" maxlength="4" placeholder="店舗作成時のパスワード">
+        </div>
+        
+        <div class="form-group">
+            <label for="confirm_text">確認</label>
+            <input type="text" id="confirm_text" name="confirm_text" required placeholder="「削除」と入力してください">
+        </div>
+        
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="hideDeleteConfirm()">キャンセル</button>
+            <button type="submit" class="btn btn-danger">削除する</button>
+        </div>
+    </form>
+</div>
+
+<style>
+.store-info-box {
+    text-align: center;
+    padding: 30px;
+    background: linear-gradient(135deg, var(--primary) 0%, #4da8ae 100%);
+    border-radius: 16px;
+    margin-bottom: 40px;
+}
+
+.store-icon-large {
+    font-size: 72px;
+    margin-bottom: 15px;
+}
+
+.store-info-box h2 {
+    color: white;
+    font-size: 28px;
+    margin: 0;
+}
+
+.settings-section {
+    margin-bottom: 40px;
+}
+
+.settings-section h3 {
+    color: var(--dark);
+    font-size: 20px;
+    margin-bottom: 15px;
+}
+
+.section-description {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.warning-text {
+    color: #e74c3c;
+}
+
+.settings-divider {
+    border: none;
+    border-top: 2px solid #e0e0e0;
+    margin: 40px 0;
+}
+
+.danger-section {
+    background: #fff5f5;
+    padding: 25px;
+    border-radius: 12px;
+    border: 2px solid #ffe0e0;
+}
+
+.invite-placeholder {
+    background: #f8f9fa;
+    border: 2px dashed #ddd;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.member-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.member-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.member-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.member-icon {
+    font-size: 24px;
+}
+
+.member-name {
+    font-weight: 500;
+    color: var(--dark);
+}
+
+.member-role {
+    font-size: 13px;
+    color: #999;
+}
+
+.warning-box {
+    background: #fff3cd;
+    border-left: 4px solid #f39c12;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.warning-box h3 {
+    color: #1d4763;
+    margin-bottom: 10px;
+}
+
+.warning-box ul {
+    color: #666;
+}
+
+.modal {
+    display: none;
+}
+
+.modal.show {
+    display: block;
+}
+
+.modal-backdrop {
+    display: none;
+}
+
+.modal-backdrop.show {
+    display: block;
+}
+</style>
+
+<script>
+function showDeleteConfirm() {
+    document.getElementById('deleteModal').classList.add('show');
+    document.getElementById('deleteBackdrop').classList.add('show');
+}
+
+function hideDeleteConfirm() {
+    document.getElementById('deleteModal').classList.remove('show');
+    document.getElementById('deleteBackdrop').classList.remove('show');
+}
+
+// 背景クリックで閉じる
+document.getElementById('deleteBackdrop').addEventListener('click', hideDeleteConfirm);
+</script>
+{% endblock %}

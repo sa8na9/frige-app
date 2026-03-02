@@ -152,6 +152,52 @@ def delete_store_confirm(store_id):
     
     return render_template('delete_store.html', store=store, show_back_button=True)
 
+# 店舗編集画面
+@app.route('/store/<int:store_id>/edit')
+def edit_store(store_id):
+    conn = get_db_connection()
+    if USE_PRODUCTION:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    else:
+        cursor = conn.cursor(dictionary=True)
+    
+    query = "SELECT * FROM fridges WHERE fridge_id = %s"
+    cursor.execute(query, (store_id,))
+    store = cursor.fetchone()
+    
+    cursor.close()
+    conn.close()
+    
+    if not store:
+        flash('店舗が見つかりません', 'error')
+        return redirect(url_for('store_select'))
+    
+    return render_template('edit_store.html', store=store, show_back_button=False)
+
+# 店舗情報更新処理
+@app.route('/store/<int:store_id>/update_info', methods=['POST'])
+def update_store_info(store_id):
+    store_name = request.form.get('store_name')
+    store_icon = request.form.get('store_icon', '🏪')
+    
+    # バリデーション
+    if not store_name or len(store_name) > 50:
+        flash('店舗名は必須です（50文字以内）', 'error')
+        return redirect(url_for('edit_store', store_id=store_id))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    query = "UPDATE fridges SET fridge_name = %s, fridge_icon = %s WHERE fridge_id = %s"
+    cursor.execute(query, (store_name, store_icon, store_id))
+    conn.commit()
+    
+    cursor.close()
+    conn.close()
+    
+    flash('店舗情報を更新しました', 'success')
+    return redirect(url_for('edit_store', store_id=store_id))
+
 # 店舗削除処理
 @app.route('/store/<int:store_id>/delete', methods=['POST'])
 def delete_store_post(store_id):
