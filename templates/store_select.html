@@ -19,27 +19,6 @@
                         <div class="fridge-icon">{{ store.fridge_icon }}</div>
                         <div class="fridge-info">
                             <h2>{{ store.fridge_name }}</h2>
-                            <p class="fridge-members">👤 スタッフ使用中</p>
-                        </div>
-                        <div class="fridge-arrow">→</div>{% extends "base.html" %}
-
-{% block content %}
-<div class="fridge-select-page">
-    <div class="fridge-select-container">
-        <div class="app-logo">
-            <div class="logo-icon">📦</div>
-            <h1>在庫管理システム</h1>
-            <p class="app-subtitle">店舗の在庫を簡単管理</p>
-        </div>
-        
-        <div class="fridge-cards">
-            {% if stores %}
-                {% for store in stores %}
-                <div class="store-card-wrapper">
-                    <a href="{{ url_for('inventory_list', store_id=store.fridge_id) }}" class="fridge-card">
-                        <div class="fridge-icon">{{ store.fridge_icon }}</div>
-                        <div class="fridge-info">
-                            <h2>{{ store.fridge_name }}</h2>
                             <p class="fridge-members">👥 メンバー: 1人</p>
                         </div>
                         <div class="fridge-arrow">→</div>
