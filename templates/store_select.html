@@ -90,34 +90,7 @@
     background: #4da8ae;
     transform: scale(1.2);
 }
-</style>
-{% endblock %}
-                    </a>
-                    <a href="{{ url_for('delete_store_confirm', store_id=store.fridge_id) }}" class="store-delete-btn" title="店舗を削除">
-                        🗑️
-                    </a>
-                </div>
-                {% endfor %}
-            {% else %}
-                <p class="no-stores">店舗が登録されていません</p>
-            {% endif %}
-            
-            <a href="{{ url_for('create_store') }}" class="fridge-card-create">
-                <div class="fridge-icon">➕</div>
-                <div class="fridge-info">
-                    <h2>新しい店舗を作成</h2>
-                    <p class="fridge-note">店舗名・アイコン・パスワードを設定</p>
-                </div>
-            </a>
-        </div>
-        
-        <div class="app-footer">
-            <p>© 2026 在庫管理システム</p>
-        </div>
-    </div>
-</div>
 
-<style>
 .store-card-wrapper {
     position: relative;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
