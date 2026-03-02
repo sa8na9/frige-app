@@ -347,6 +347,7 @@ a,a:hover,a:visited{
     font-weight: 600;
     font-size: 14px;
     transition: all 0.3s;
+    color: #333;
 }
 
 .qty-btn:hover {
@@ -540,14 +541,17 @@ a,a:hover,a:visited{
 input[type="text"],
 input[type="date"],
 input[type="number"],
+input[type="password"],  /* ← 追加 */
 select,
 textarea {
     width: 100%;
+    max-width: 100%;  /* ← 追加 */
     padding: 12px 16px;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
     font-size: 14px;
     transition: all 0.3s;
+    box-sizing: border-box;  /* ← 追加 */
 }
 
 input:focus,
@@ -958,7 +962,19 @@ textarea {
     }
     
     .form-page {
-        padding: 24px;
+        padding: 24px 20px;  /* ← 変更 */
+    }
+    
+    .form-group {
+        margin-bottom: 20px;  /* ← 追加 */
+    }
+    
+    /* date input要素の特別対応 */
+    input[type="date"] {
+        -webkit-appearance: none;  /* ← 追加 */
+        appearance: none;  /* ← 追加 */
+        width: 100%;  /* ← 追加 */
+        max-width: 100%;  /* ← 追加 */
     }
     
     .fab {
@@ -966,12 +982,6 @@ textarea {
         right: 20px;
         width: 56px;
         height: 56px;
-    }
-    
-    .fab-icon {
-        font-size: 28px;
-        height: 28px;
-        top: 11px;
     }
     
     .modal {
@@ -1296,4 +1306,50 @@ textarea {
     .icon-selector {
         grid-template-columns: repeat(3, 1fr);
     }
+}
+
+/* =============================================
+   店舗選択画面 - ホバー動作
+   ============================================= */
+.store-card-wrapper {
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.store-card-wrapper:hover {
+    transform: translateY(-8px) scale(1.02);
+}
+
+.store-card-wrapper:hover .fridge-card {
+    box-shadow: 0 16px 40px rgba(95, 193, 199, 0.4);
+}
+
+.store-card-wrapper .fridge-card {
+    transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.store-card-wrapper .fridge-card:hover {
+    transform: none;
+}
+
+.store-delete-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    background: #e74c3c;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    text-decoration: none;
+    transition: all 0.3s;
+    z-index: 10;
+}
+
+.store-delete-btn:hover {
+    background: #c0392b;
+    transform: scale(1.2);
 }
