@@ -5,6 +5,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+
 }
 
 body {
@@ -23,6 +24,10 @@ body {
     --success: #28a745;
     --danger: #e74c3c;
     --warning: #f39c12;
+}
+
+a,a:hover,a:visited{
+    color: inherit;
 }
 
 /* =============================================
@@ -701,6 +706,7 @@ textarea {
 }
 
 .fridge-cards {
+    color: white;
     display: grid;
     gap: 20px;
 }
@@ -722,11 +728,13 @@ textarea {
 }
 
 .fridge-card h2 {
+    color: white;
     font-size: 24px;
     margin-bottom: 8px;
 }
 
 .fridge-card p {
+    color: white;
     opacity: 0.9;
     font-size: 14px;
 }
@@ -963,7 +971,7 @@ textarea {
     .fab-icon {
         font-size: 28px;
         height: 28px;
-        top: 1px;
+        top: 10px;
     }
     
     .modal {
@@ -1156,6 +1164,10 @@ textarea {
 .fridge-card-disabled .fridge-icon {
     font-size: 48px;
     opacity: 0.5;
+}
+
+.fridge-card-create:hover {
+    color: #333;
 }
 
 .fridge-card-disabled h2 {
