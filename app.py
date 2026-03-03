@@ -350,7 +350,7 @@ def inventory_list(store_id):
         
         # 発注リストに追加ボタンを表示するか
         item['show_add_to_list'] = (
-            item['quantity_level'] > 3 or 
+            item['quantity_level'] >= 3 or 
             (item['expiry_date'] and item['expiry_date'] < today)
         )
     
