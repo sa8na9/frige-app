@@ -325,6 +325,17 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+    align-items: stretch;
+}
+
+.item-actions form {
+    display: inline-flex;
+    align-items: stretch;
+}
+
+.item-actions form .btn {
+    display: flex;
+    align-items: center;
 }
 
 .btn-item-edit {
