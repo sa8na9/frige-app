@@ -1,0 +1,317 @@
+/* =============================================
+   店舗選択画面（トップページ）
+   ============================================= */
+.fridge-select-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: #f5f5f5;
+}
+
+.fridge-select-container {
+    max-width: 600px;
+    width: 100%;
+    background: white;
+    padding: 60px 50px;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+/* =============================================
+   アプリロゴ
+   ============================================= */
+.app-logo {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.logo-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-10px); }
+}
+
+.app-logo h1 {
+    font-size: 36px;
+    color: var(--dark);
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.app-subtitle {
+    color: #666;
+    font-size: 16px;
+}
+
+/* =============================================
+   店舗カード一覧
+   ============================================= */
+.fridge-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.fridge-card {
+    background: linear-gradient(135deg, var(--primary) 0%, #4da8ae 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.fridge-card:visited {
+    color: white;
+}
+
+.fridge-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.fridge-card:hover::before {
+    opacity: 1;
+}
+
+.fridge-icon {
+    font-size: 48px;
+    flex-shrink: 0;
+}
+
+.fridge-card h2 {
+    font-size: 24px;
+    margin-bottom: 6px;
+    flex: 1;
+    color: white;
+}
+
+.fridge-card p {
+    color: white;
+    opacity: 0.9;
+    font-size: 14px;
+}
+
+.fridge-members {
+    opacity: 0.9;
+    font-size: 14px;
+    margin: 0;
+}
+
+.fridge-arrow {
+    font-size: 28px;
+    font-weight: bold;
+    transition: transform 0.3s;
+}
+
+.fridge-card:hover .fridge-arrow {
+    transform: translateX(8px);
+}
+
+.fridge-info {
+    flex: 1;
+    text-align: center;
+}
+
+/* =============================================
+   店舗作成カード
+   ============================================= */
+.fridge-card-create {
+    background: #f8f9fa;
+    color: #333;
+    padding: 30px;
+    border-radius: 16px;
+    border: 2px dashed #ddd;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.fridge-card-create:hover {
+    border-color: var(--primary);
+    background: rgba(95, 193, 199, 0.05);
+    transform: translateY(-4px);
+    color: #333;
+}
+
+.fridge-card-create h2 {
+    color: var(--dark);
+}
+
+.fridge-card-create p {
+    color: #333;
+}
+
+/* =============================================
+   無効カード
+   ============================================= */
+.fridge-card-disabled {
+    background: #f0f0f0;
+    color: #999;
+    padding: 30px;
+    border-radius: 16px;
+    border: 2px dashed #ddd;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    cursor: not-allowed;
+}
+
+.fridge-card-disabled .fridge-icon {
+    font-size: 48px;
+    opacity: 0.5;
+}
+
+.fridge-card-disabled h2 {
+    font-size: 20px;
+    margin-bottom: 4px;
+    flex: 1;
+}
+
+.fridge-note {
+    font-size: 13px;
+    font-style: italic;
+    margin: 0;
+    color: #666;
+}
+
+/* =============================================
+   カードホバー動作（ラッパー）
+   ============================================= */
+.store-card-wrapper {
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.store-card-wrapper:hover {
+    transform: translateY(-8px) scale(1.02);
+}
+
+.store-card-wrapper:hover .fridge-card {
+    box-shadow: 0 16px 40px rgba(95, 193, 199, 0.4);
+}
+
+.store-card-wrapper .fridge-card {
+    transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.store-card-wrapper .fridge-card:hover {
+    transform: none;
+}
+
+/* =============================================
+   編集・削除ボタン（カード右上）
+   ============================================= */
+.store-edit-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    background: #5fc1c7;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    text-decoration: none;
+    transition: all 0.3s;
+    z-index: 10;
+}
+
+.store-edit-btn:hover {
+    background: #4da8ae;
+    transform: scale(1.2);
+}
+
+.store-delete-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    background: #e74c3c;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    text-decoration: none;
+    transition: all 0.3s;
+    z-index: 10;
+}
+
+.store-delete-btn:hover {
+    background: #c0392b;
+    transform: scale(1.2);
+}
+
+/* =============================================
+   フッター・その他
+   ============================================= */
+.app-footer {
+    text-align: center;
+    padding-top: 30px;
+    border-top: 1px solid #eee;
+}
+
+.app-footer p {
+    color: #999;
+    font-size: 13px;
+}
+
+.no-stores {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+    font-size: 16px;
+}
+
+/* =============================================
+   レスポンシブ
+   ============================================= */
+@media (max-width: 768px) {
+    .fridge-select-container {
+        padding: 40px 30px;
+    }
+
+    .app-logo h1 {
+        font-size: 28px;
+    }
+
+    .logo-icon {
+        font-size: 64px;
+    }
+
+    .fridge-card,
+    .fridge-card-disabled {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .fridge-arrow {
+        display: none;
+    }
+}

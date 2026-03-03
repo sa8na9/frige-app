@@ -1,0 +1,330 @@
+/* =============================================
+   リセット・基本設定
+   ============================================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+}
+
+:root {
+    --primary: #5fc1c7;
+    --secondary: #e6e500;
+    --dark: #1d4763;
+    --light: #ffffff;
+    --gray: #f8f9fa;
+    --success: #28a745;
+    --danger: #e74c3c;
+    --warning: #f39c12;
+}
+
+a, a:hover, a:visited {
+    color: inherit;
+}
+
+/* =============================================
+   コンテナ
+   ============================================= */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* =============================================
+   アプリヘッダー
+   ============================================= */
+.app-header {
+    background: var(--dark);
+    padding: 12px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.app-header a {
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: opacity 0.3s;
+}
+
+.app-header a:hover {
+    opacity: 0.8;
+}
+
+/* =============================================
+   ボタン
+   ============================================= */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* <button>要素のブラウザデフォルトをリセットしシャドウを保証 */
+button.btn {
+    -webkit-appearance: none;
+    appearance: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+button.btn:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover,
+.btn-primary:visited {
+    background: #4da8ae;
+    color: white;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover,
+.btn-secondary:visited {
+    background: #5a6268;
+    color: white;
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover,
+.btn-danger:visited {
+    background: #c0392b;
+    color: white;
+}
+
+.btn-small {
+    padding: 8px 16px;
+    font-size: 13px;
+}
+
+.btn-list {
+    background-color: var(--primary);
+    color: white;
+}
+
+.btn-list:hover {
+    background-color: #4da8ae;
+}
+
+.btn-list-added {
+    background-color: #95a5a6;
+    color: white;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.btn-list-added:hover {
+    background-color: #95a5a6;
+    transform: none;
+}
+
+/* =============================================
+   モーダル
+   ============================================= */
+.modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1001;
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.3);
+    min-width: 500px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+/* classを使ってモーダルを開く場合（edit_store等） */
+.modal.show {
+    display: block;
+}
+
+.modal-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal-backdrop.show {
+    display: block;
+}
+
+.modal h2 {
+    margin-bottom: 24px;
+    color: var(--dark);
+    font-size: 24px;
+}
+
+.modal h3 {
+    font-size: 18px;
+    color: var(--dark);
+    margin-bottom: 16px;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+/* =============================================
+   トースト通知
+   ============================================= */
+.toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.toast {
+    background: white;
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 320px;
+    max-width: 420px;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast.hide {
+    opacity: 0;
+    transform: translateX(400px);
+}
+
+.toast-success {
+    border-left: 5px solid var(--success);
+}
+
+.toast-error {
+    border-left: 5px solid var(--danger);
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 14px;
+    color: #333;
+}
+
+.toast-success .toast-message::before {
+    content: "✓ ";
+    color: var(--success);
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.toast-error .toast-message::before {
+    content: "✕ ";
+    color: var(--danger);
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.toast-close:hover {
+    color: #333;
+}
+
+/* =============================================
+   レスポンシブ（共通）
+   ============================================= */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    .modal {
+        min-width: 90%;
+        padding: 24px;
+    }
+
+    .toast-container {
+        top: 12px;
+        right: 12px;
+        left: 12px;
+    }
+
+    .toast {
+        min-width: auto;
+        max-width: none;
+    }
+}

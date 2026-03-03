@@ -2,6 +2,10 @@
 
 {% block title %}{{ category_name }}登録 - 冷蔵庫管理アプリ{% endblock %}
 
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="form-page">
     <h1>{{ category_name }}の登録</h1>
@@ -81,58 +85,4 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
-<script>
-// 文字数カウント
-const nameInput = document.getElementById('name');
-const charCount = document.getElementById('charCount');
-const memoInput = document.getElementById('memo');
-const memoCount = document.getElementById('memoCount');
-
-nameInput.addEventListener('input', () => {
-    charCount.textContent = nameInput.value.length;
-});
-
-memoInput.addEventListener('input', () => {
-    memoCount.textContent = memoInput.value.length;
-});
-
-// 日付検証
-const expiryDate = document.getElementById('expiry_date');
-const openedDate = document.getElementById('opened_date');
-const expiryWarning = document.getElementById('expiryWarning');
-const openedWarning = document.getElementById('openedWarning');
-
-function validateDates() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    // 賞味期限が過去の日付かチェック
-    if (expiryDate.value) {
-        const expiry = new Date(expiryDate.value);
-        if (expiry < today) {
-            expiryWarning.style.display = 'block';
-        } else {
-            expiryWarning.style.display = 'none';
-        }
-    } else {
-        expiryWarning.style.display = 'none';
-    }
-    
-    // 開封日が未来の日付かチェック
-    if (openedDate.value) {
-        const opened = new Date(openedDate.value);
-        if (opened > today) {
-            openedWarning.style.display = 'block';
-        } else {
-            openedWarning.style.display = 'none';
-        }
-    } else {
-        openedWarning.style.display = 'none';
-    }
-}
-
-expiryDate.addEventListener('change', validateDates);
-openedDate.addEventListener('change', validateDates);
-</script>
-{% endblock %}
+{% block scripts %}{% endblock %}

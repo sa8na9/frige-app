@@ -2,11 +2,15 @@
 
 {% block title %}店舗作成 - 在庫管理システム{% endblock %}
 
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="form-page">
     <h1>新しい店舗を作成</h1>
     
-    <form method="POST">
+    <form method="POST" id="createStoreForm">
         <!-- 店舗名 -->
         <div class="form-group">
             <label for="store_name">店舗名 <span class="required">*必須</span></label>
@@ -85,26 +89,4 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
-<script>
-// 文字数カウント
-const nameInput = document.getElementById('store_name');
-const nameCount = document.getElementById('nameCount');
-
-nameInput.addEventListener('input', () => {
-    nameCount.textContent = nameInput.value.length;
-});
-
-// パスワード一致確認
-const form = document.querySelector('form');
-form.addEventListener('submit', (e) => {
-    const password = document.getElementById('password').value;
-    const confirm = document.getElementById('password_confirm').value;
-    
-    if (password !== confirm) {
-        e.preventDefault();
-        alert('パスワードが一致しません');
-    }
-});
-</script>
-{% endblock %}
+{% block scripts %}{% endblock %}

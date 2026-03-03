@@ -2,6 +2,10 @@
 
 {% block title %}店舗削除 - 在庫管理システム{% endblock %}
 
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="form-page">
     <h1 style="color: #e74c3c;">⚠️ 店舗を削除</h1>
@@ -41,22 +45,4 @@
     </form>
 </div>
 
-<style>
-.warning-box {
-    background: #fff3cd;
-    border-left: 4px solid #f39c12;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 30px;
-}
-
-.warning-box h3 {
-    color: #1d4763;
-    margin-bottom: 10px;
-}
-
-.warning-box ul {
-    color: #666;
-}
-</style>
 {% endblock %}

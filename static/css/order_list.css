@@ -1,0 +1,132 @@
+/* =============================================
+   ページヘッダー
+   ============================================= */
+.page-header {
+    background: var(--dark);
+    padding: 25px 30px;
+    border-radius: 16px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    color: white;
+    font-weight: 700;
+    margin: 0;
+}
+
+.page-header .btn-secondary {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.page-header .btn-secondary:hover,
+.page-header .btn-secondary:visited {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+}
+
+.page-header .btn-primary:visited {
+    color: white;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-left h1 {
+    margin: 0;
+}
+
+.no-items {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+}
+
+/* =============================================
+   発注リストページ
+   ============================================= */
+.shopping-list-page {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.shopping-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.3s;
+}
+
+.shopping-card:hover {
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+}
+
+.shopping-card.checked {
+    opacity: 0.6;
+}
+
+.shopping-info {
+    flex: 1;
+}
+
+.shopping-info h3 {
+    font-size: 18px;
+    color: var(--dark);
+    margin-bottom: 4px;
+}
+
+.shopping-type {
+    font-size: 13px;
+    color: #888;
+}
+
+.shopping-memo {
+    font-size: 13px;
+    color: #666;
+    margin-top: 6px;
+    font-style: italic;
+}
+
+/* =============================================
+   チェックボタン
+   ============================================= */
+.check-btn {
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--primary);
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.check-btn.checked {
+    background: var(--primary);
+    position: relative;
+}
+
+.check-btn.checked::after {
+    content: "✓";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+}

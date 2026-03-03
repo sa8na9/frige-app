@@ -2,6 +2,10 @@
 
 {% block title %}店舗設定 - 在庫管理システム{% endblock %}
 
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="form-page">
     <h1>⚙️ 店舗設定</h1>

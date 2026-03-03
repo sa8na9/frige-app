@@ -33,10 +33,20 @@ def get_db_connection():
     config = get_db_config()
     if USE_PRODUCTION:
         print("🔗 PostgreSQLに接続しています...")
-        return psycopg2.connect(config)
+        conn = psycopg2.connect(config)
+        cur = conn.cursor()
+        cur.execute("SET timezone = 'Asia/Tokyo'")
+        cur.close()
+        conn.commit()
+        return conn
     else:
         print("🔗 MySQL(XAMPP)に接続しています...")
-        return mysql.connector.connect(**config)
+        conn = mysql.connector.connect(**config)
+        cur = conn.cursor()
+        cur.execute("SET time_zone = '+09:00'")
+        cur.close()
+        conn.commit()
+        return conn
 
 
 # 日本時間（JST）の現在日付を取得
@@ -841,6 +851,29 @@ def delete_category(store_id):
     conn.close()
     
     flash(f'カテゴリ「{category_name}」と{deleted_items}件のアイテムを削除しました', 'success')
+    return redirect(url_for('inventory_list', store_id=store_id))
+
+# カテゴリ名変更API
+@app.route('/store/<int:store_id>/rename_category', methods=['POST'])
+def rename_category(store_id):
+    category_id = request.form.get('category_id', type=int)
+    new_name = request.form.get('name', '').strip()
+
+    if not new_name or len(new_name) > 50:
+        flash('カテゴリ名は必須です（50文字以内）', 'error')
+        return redirect(url_for('inventory_list', store_id=store_id))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    query = "UPDATE categories SET name = %s WHERE id = %s AND fridge_id = %s"
+    cursor.execute(query, (new_name, category_id, store_id))
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    flash(f'カテゴリ名を「{new_name}」に変更しました', 'success')
     return redirect(url_for('inventory_list', store_id=store_id))
 
 # =============================================

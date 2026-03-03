@@ -2,6 +2,10 @@
 
 {% block title %}発注品入荷 - 在庫管理システム{% endblock %}
 
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="form-page">
     <h1>📦 発注品入荷</h1>
@@ -71,13 +75,4 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
-<script>
-const memoInput = document.getElementById('memo');
-const memoCount = document.getElementById('memoCount');
-
-memoInput.addEventListener('input', () => {
-    memoCount.textContent = memoInput.value.length;
-});
-</script>
-{% endblock %}
+{% block scripts %}{% endblock %}
