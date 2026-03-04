@@ -72,15 +72,14 @@
         min-width: 0;
     }
 
-    /* モバイルではタイトルを先頭に */
     .header-left h1 {
-        order: -1;
+        order: 1;
         font-size: 22px;
         white-space: nowrap;
     }
 
     .header-left > .btn-secondary {
-        order: 1;
+        order: -1;
         white-space: nowrap;
     }
 
