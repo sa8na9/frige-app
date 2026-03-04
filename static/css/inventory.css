@@ -329,7 +329,7 @@
 }
 
 .item-actions form {
-    display: inline-flex;
+    display: flex !important;
     align-items: stretch;
 }
 
