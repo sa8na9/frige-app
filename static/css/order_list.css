@@ -44,6 +44,52 @@
     margin: 0;
 }
 
+.header-actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.header-actions .btn {
+    white-space: nowrap;
+}
+
+/* =============================================
+   レスポンシブ
+   ============================================= */
+@media (max-width: 600px) {
+    .page-header {
+        align-items: flex-start;
+        padding: 16px 20px;
+        gap: 12px;
+    }
+
+    .header-left {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* モバイルではタイトルを先頭に */
+    .header-left h1 {
+        order: -1;
+        font-size: 22px;
+        white-space: nowrap;
+    }
+
+    .header-left > .btn-secondary {
+        order: 1;
+        white-space: nowrap;
+    }
+
+    .header-actions {
+        align-self: flex-start;
+        margin-top: 2px;
+    }
+}
+
 .no-items {
     text-align: center;
     padding: 60px 20px;

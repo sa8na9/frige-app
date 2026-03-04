@@ -13,8 +13,8 @@
             <a href="{{ url_for('inventory_list', store_id=store_id) }}" class="btn btn-secondary btn-small">← 在庫一覧に戻る</a>
             <h1>📋 発注リスト</h1>
         </div>
-        <div style="display: flex; gap: 10px;">
-            <a href="{{ url_for('add_order_manual', store_id=store_id) }}" class="btn btn-primary">+ 追加</a>
+        <div class="header-actions">
+            <a href="{{ url_for('add_order_manual', store_id=store_id) }}" class="btn btn-primary btn-small">+ 追加</a>
         </div>
     </header>
     
